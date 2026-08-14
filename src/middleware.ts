@@ -15,6 +15,26 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
+  // If trying to access /parents/ids, we need to check if user is SUPER_ADMIN
+  if (request.nextUrl.pathname === '/parents/ids' && sessionCookie) {
+    try {
+      const { jwtVerify } = await import('jose');
+      const secretKey = process.env.JWT_SECRET || "super-secret-spta-key";
+      const key = new TextEncoder().encode(secretKey);
+      
+      const { payload } = await jwtVerify(sessionCookie, key, { algorithms: ["HS256"] });
+      const user = payload.user as any;
+      
+      if (user.role !== 'SUPER_ADMIN') {
+        return NextResponse.redirect(new URL("/", request.url));
+      }
+    } catch (e) {
+      // If token is invalid, let them fall through to normal auth handling (which will likely fail later)
+      // or we can just redirect to login here
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+  }
+
   return NextResponse.next()
 }
 
