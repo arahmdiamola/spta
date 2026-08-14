@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 function parseCSV(text: string) {
   const lines = text.split(/\r?\n/).filter(line => line.trim() !== "");
   return lines.map(line => {
-    const row = [];
+    const row: string[] = [];
     let cur = "";
     let inQuote = false;
     for (let i = 0; i < line.length; i++) {
