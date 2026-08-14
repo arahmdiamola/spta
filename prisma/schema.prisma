@@ -1,0 +1,118 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Parent {
+  id            String         @id @default(uuid())
+  name          String
+  contactInfo   String?
+  photo         String?
+  qrCodeId      String         @unique @default(uuid())
+  children      Child[]
+  attendances   Attendance[]
+  contributions Contribution[]
+  penalties     Penalty[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Child {
+  id        String   @id @default(uuid())
+  name      String
+  grade     String
+  parentId  String
+  parent    Parent   @relation(fields: [parentId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Event {
+  id          String       @id @default(uuid())
+  name        String
+  type        String       // 'MEETING', 'ASSEMBLY', 'VOLUNTARY_WORK'
+  date        DateTime
+  attendances Attendance[]
+  penalties   Penalty[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Attendance {
+  id         String    @id @default(uuid())
+  parentId   String
+  eventId    String
+  parent     Parent    @relation(fields: [parentId], references: [id])
+  event      Event     @relation(fields: [eventId], references: [id])
+  timeIn     DateTime?
+  timeOut    DateTime?
+  totalHours Float?    // For voluntary work
+
+  @@unique([parentId, eventId])
+}
+
+model Settings {
+  id    String @id @default(uuid())
+  key   String @unique
+  value String
+}
+
+model Contribution {
+  id         String   @id @default(uuid())
+  parentId   String
+  parent     Parent   @relation(fields: [parentId], references: [id])
+  year       Int
+  amountPaid Float
+  datePaid   DateTime @default(now())
+}
+
+model Penalty {
+  id       String  @id @default(uuid())
+  parentId String
+  eventId  String
+  parent   Parent  @relation(fields: [parentId], references: [id])
+  event    Event   @relation(fields: [eventId], references: [id])
+  amount   Float
+  isPaid   Boolean @default(false)
+}
+
+model Expense {
+  id          String   @id @default(uuid())
+  amount      Float
+  description String
+  requestedBy String
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  role      String   @default("ADMIN") // 'ADMIN' or 'SUPER_ADMIN'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Archive {
+  id        String   @id @default(uuid())
+  yearName  String   @unique
+  data      String
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  username  String   
+  action    String   
+  entity    String   
+  details   String?  
+  createdAt DateTime @default(now())
+}
