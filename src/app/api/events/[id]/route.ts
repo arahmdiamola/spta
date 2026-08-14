@@ -54,17 +54,17 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const attendedParentIds = new Set(event.attendances.map((a: { parentId: string }) => a.parentId));
 
     // Find absent parents — those not in the attendance list
-    const absentParents = allParents.filter((p) => !attendedParentIds.has(p.id));
+    const absentParents = allParents.filter((p: { id: string }) => !attendedParentIds.has(p.id));
 
     // Create penalties for absent parents (skip if already penalized for this event)
     const existingPenalties = await prisma.penalty.findMany({
       where: { eventId: id },
     });
-    const alreadyPenalizedIds = new Set(existingPenalties.map((p) => p.parentId));
+    const alreadyPenalizedIds = new Set(existingPenalties.map((p: { parentId: string }) => p.parentId));
 
     const newPenalties = absentParents
-      .filter((p) => !alreadyPenalizedIds.has(p.id))
-      .map((p) => ({
+      .filter((p: { id: string }) => !alreadyPenalizedIds.has(p.id))
+      .map((p: { id: string }) => ({
         parentId: p.id,
         eventId: id,
         amount: penaltyAmount,
