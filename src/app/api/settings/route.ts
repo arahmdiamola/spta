@@ -7,7 +7,7 @@ export async function GET() {
   try {
     const settings = await prisma.settings.findMany();
     const result: Record<string, string> = {};
-    settings.forEach(s => result[s.key] = s.value);
+    settings.forEach((s: { key: string; value: string }) => result[s.key] = s.value);
     return NextResponse.json(result);
   } catch (error) {
     return NextResponse.json({ error: "Failed to fetch settings" }, { status: 500 });
