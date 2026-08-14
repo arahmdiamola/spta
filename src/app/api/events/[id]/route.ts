@@ -51,7 +51,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const allParents = await prisma.parent.findMany();
 
     // Find parents who attended
-    const attendedParentIds = new Set(event.attendances.map((a) => a.parentId));
+    const attendedParentIds = new Set(event.attendances.map((a: { parentId: string }) => a.parentId));
 
     // Find absent parents — those not in the attendance list
     const absentParents = allParents.filter((p) => !attendedParentIds.has(p.id));
