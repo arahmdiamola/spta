@@ -3,8 +3,9 @@ import { Pool } from 'pg'
 import { PrismaPg } from '@prisma/adapter-pg'
 
 const prismaClientSingleton = () => {
-  const connectionString = `${process.env.DATABASE_URL}`
-  const pool = new Pool({ connectionString })
+  // Use DIRECT_URL (port 5432) to avoid PgBouncer prepared statement issues
+  const connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL || ''
+  const pool = new Pool({ connectionString, ssl: { rejectUnauthorized: false } })
   const adapter = new PrismaPg(pool)
   return new PrismaClient({ adapter })
 }
