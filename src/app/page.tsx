@@ -4,9 +4,14 @@ import prisma from "@/lib/prisma";
 import AddExpenseButton from "./AddExpenseButton";
 import { format } from "date-fns";
 
+import { getSession } from "@/lib/auth";
+
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
+  const session = await getSession();
+  const isTeacher = session?.user?.role === "TEACHER";
+
   const [totalParents, upcomingEvents, unpaidPenaltiesList, contributions, paidPenalties, expenses] = await Promise.all([
     prisma.parent.count(),
     prisma.event.count({ where: { date: { gte: new Date() } } }),
@@ -85,7 +90,7 @@ export default async function Home() {
                 </h2>
                 <p className="text-slate-500 text-sm mt-1">Track funds spent by the PTA.</p>
               </div>
-              <AddExpenseButton />
+              {!isTeacher && <AddExpenseButton />}
             </div>
 
             <div className="space-y-4">
@@ -137,15 +142,17 @@ export default async function Home() {
                    <ArrowRight size={20} />
                 </div>
               </Link>
-              <Link href="/settings" className="p-5 border-2 border-slate-100 rounded-2xl hover:border-indigo-500 hover:bg-indigo-50/50 transition-all flex items-center justify-between group">
-                <div>
-                  <h3 className="font-bold text-lg text-slate-900 group-hover:text-indigo-700 transition-colors">Settings</h3>
-                  <p className="text-slate-500 text-sm mt-1">Configure PTA fees</p>
-                </div>
-                <div className="h-10 w-10 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
-                   <ArrowRight size={20} />
-                </div>
-              </Link>
+              {!isTeacher && (
+                <Link href="/settings" className="p-5 border-2 border-slate-100 rounded-2xl hover:border-indigo-500 hover:bg-indigo-50/50 transition-all flex items-center justify-between group">
+                  <div>
+                    <h3 className="font-bold text-lg text-slate-900 group-hover:text-indigo-700 transition-colors">Settings</h3>
+                    <p className="text-slate-500 text-sm mt-1">Configure PTA fees</p>
+                  </div>
+                  <div className="h-10 w-10 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
+                     <ArrowRight size={20} />
+                  </div>
+                </Link>
+              )}
             </div>
           </div>
         </div>

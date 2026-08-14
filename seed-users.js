@@ -26,6 +26,15 @@ async function main() {
   } else {
     console.log('Admin already exists');
   }
+
+  const teacherCount = await prisma.user.count({ where: { role: 'TEACHER' } });
+  if (teacherCount === 0) {
+    const password = await bcrypt.hash('teacher123', 10);
+    await prisma.user.create({ data: { username: 'teacher', password, role: 'TEACHER' } });
+    console.log('Created default teacher');
+  } else {
+    console.log('Teacher already exists');
+  }
 }
 
 main().catch(console.error).finally(() => prisma.$disconnect());

@@ -16,7 +16,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // If trying to access /parents/ids, we need to check if user is SUPER_ADMIN
-  if (request.nextUrl.pathname === '/parents/ids' && sessionCookie) {
+  if (sessionCookie) {
     try {
       const { jwtVerify } = await import('jose');
       const secretKey = process.env.JWT_SECRET || "super-secret-spta-key";
@@ -25,7 +25,15 @@ export async function middleware(request: NextRequest) {
       const { payload } = await jwtVerify(sessionCookie, key, { algorithms: ["HS256"] });
       const user = payload.user as any;
       
-      if (user.role !== 'SUPER_ADMIN') {
+      if (request.nextUrl.pathname === '/parents/ids' && user.role !== 'SUPER_ADMIN') {
+        return NextResponse.redirect(new URL("/", request.url));
+      }
+
+      // Block TEACHER from accessing /parents and /settings
+      if (
+        user.role === 'TEACHER' && 
+        (request.nextUrl.pathname.startsWith('/parents') || request.nextUrl.pathname.startsWith('/settings'))
+      ) {
         return NextResponse.redirect(new URL("/", request.url));
       }
     } catch (e) {

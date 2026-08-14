@@ -11,6 +11,7 @@ export default function Navigation({ session }: { session: any }) {
   const pathname = usePathname();
 
   const isSuperAdmin = session?.user?.role === "SUPER_ADMIN";
+  const isTeacher = session?.user?.role === "TEACHER";
 
   const closeMenu = () => setMobileMenuOpen(false);
 
@@ -25,10 +26,12 @@ export default function Navigation({ session }: { session: any }) {
           <LayoutDashboard size={20} className={pathname === '/' ? 'text-indigo-400' : 'text-slate-400'} />
           <span className="font-medium text-sm tracking-wide">Dashboard</span>
         </Link>
-        <Link href="/parents" onClick={closeMenu} className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors ${pathname.startsWith('/parents') ? 'bg-indigo-600/20 text-indigo-200 border border-indigo-500/20' : 'hover:bg-indigo-900 text-slate-300'}`}>
-          <Users size={20} className={pathname.startsWith('/parents') ? 'text-indigo-400' : 'text-slate-400'} />
-          <span className="font-medium text-sm tracking-wide">Parents</span>
-        </Link>
+        {!isTeacher && (
+          <Link href="/parents" onClick={closeMenu} className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors ${pathname.startsWith('/parents') ? 'bg-indigo-600/20 text-indigo-200 border border-indigo-500/20' : 'hover:bg-indigo-900 text-slate-300'}`}>
+            <Users size={20} className={pathname.startsWith('/parents') ? 'text-indigo-400' : 'text-slate-400'} />
+            <span className="font-medium text-sm tracking-wide">Parents</span>
+          </Link>
+        )}
         <Link href="/events" onClick={closeMenu} className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors ${pathname.startsWith('/events') ? 'bg-indigo-600/20 text-indigo-200 border border-indigo-500/20' : 'hover:bg-indigo-900 text-slate-300'}`}>
           <Calendar size={20} className={pathname.startsWith('/events') ? 'text-indigo-400' : 'text-slate-400'} />
           <span className="font-medium text-sm tracking-wide">Events</span>
@@ -39,10 +42,12 @@ export default function Navigation({ session }: { session: any }) {
         </Link>
       </nav>
       <div className="p-4 space-y-2">
-        <Link href="/settings" onClick={closeMenu} className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors ${pathname === '/settings' ? 'bg-indigo-600/20 text-indigo-200 border border-indigo-500/20' : 'hover:bg-indigo-900 text-slate-300'}`}>
-          <Settings size={20} className={pathname === '/settings' ? 'text-indigo-400' : 'text-slate-400'} />
-          <span className="font-medium text-sm tracking-wide">Settings</span>
-        </Link>
+        {!isTeacher && (
+          <Link href="/settings" onClick={closeMenu} className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors ${pathname === '/settings' ? 'bg-indigo-600/20 text-indigo-200 border border-indigo-500/20' : 'hover:bg-indigo-900 text-slate-300'}`}>
+            <Settings size={20} className={pathname === '/settings' ? 'text-indigo-400' : 'text-slate-400'} />
+            <span className="font-medium text-sm tracking-wide">Settings</span>
+          </Link>
+        )}
         {isSuperAdmin && (
           <Link href="/settings/users" onClick={closeMenu} className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors ${pathname.startsWith('/settings/users') ? 'bg-indigo-600/20 text-indigo-200 border border-indigo-500/20' : 'hover:bg-indigo-900 text-slate-300'}`}>
             <Users size={20} className={pathname.startsWith('/settings/users') ? 'text-indigo-400' : 'text-slate-400'} />
@@ -82,10 +87,12 @@ export default function Navigation({ session }: { session: any }) {
           <LayoutDashboard size={24} />
           <span className="text-[10px] mt-1 font-medium">Dashboard</span>
         </Link>
-        <Link href="/parents" className={`flex flex-col items-center p-2 rounded-xl transition-colors ${pathname.startsWith('/parents') ? 'text-indigo-300' : 'text-slate-400 hover:text-slate-300'}`}>
-          <Users size={24} />
-          <span className="text-[10px] mt-1 font-medium">Parents</span>
-        </Link>
+        {!isTeacher && (
+          <Link href="/parents" className={`flex flex-col items-center p-2 rounded-xl transition-colors ${pathname.startsWith('/parents') ? 'text-indigo-300' : 'text-slate-400 hover:text-slate-300'}`}>
+            <Users size={24} />
+            <span className="text-[10px] mt-1 font-medium">Parents</span>
+          </Link>
+        )}
         <Link href="/scanner" className={`flex flex-col items-center p-2 rounded-xl transition-colors -mt-6 bg-indigo-600 rounded-full shadow-lg border-4 border-slate-50 ${pathname.startsWith('/scanner') ? 'text-white bg-indigo-500' : 'text-indigo-50 hover:bg-indigo-500'}`}>
           <div className="p-2">
             <QrCode size={28} />
@@ -95,10 +102,12 @@ export default function Navigation({ session }: { session: any }) {
           <Calendar size={24} />
           <span className="text-[10px] mt-1 font-medium">Events</span>
         </Link>
-        <Link href="/settings" className={`flex flex-col items-center p-2 rounded-xl transition-colors ${pathname.startsWith('/settings') ? 'text-indigo-300' : 'text-slate-400 hover:text-slate-300'}`}>
-          <Settings size={24} />
-          <span className="text-[10px] mt-1 font-medium">Settings</span>
-        </Link>
+        {!isTeacher && (
+          <Link href="/settings" className={`flex flex-col items-center p-2 rounded-xl transition-colors ${pathname.startsWith('/settings') ? 'text-indigo-300' : 'text-slate-400 hover:text-slate-300'}`}>
+            <Settings size={24} />
+            <span className="text-[10px] mt-1 font-medium">Settings</span>
+          </Link>
+        )}
       </nav>
     </>
   );
