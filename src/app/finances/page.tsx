@@ -3,6 +3,8 @@ import { Receipt, Search, Download } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 
+import ExportFinancesButton from "@/components/ExportFinancesButton";
+
 export default async function FinancesPage() {
   const feeCategories = await prisma.feeCategory.findMany({
     orderBy: { name: 'asc' }
@@ -60,6 +62,9 @@ export default async function FinancesPage() {
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Finances & Reports</h1>
           <p className="text-slate-500 mt-1">Track fee collections and remittances</p>
+        </div>
+        <div>
+          <ExportFinancesButton reports={reports} />
         </div>
       </header>
 

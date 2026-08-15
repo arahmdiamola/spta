@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { Plus, X, Receipt } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Base64DocumentUpload from "@/components/Base64DocumentUpload";
 
 export default function AddExpenseButton() {
   const [isOpen, setIsOpen] = useState(false);
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [requestedBy, setRequestedBy] = useState("");
+  const [documentUrl, setDocumentUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -25,7 +27,8 @@ export default function AddExpenseButton() {
         body: JSON.stringify({ 
           amount: parseFloat(amount),
           description,
-          requestedBy
+          requestedBy,
+          documentUrl
         }),
       });
 
@@ -38,6 +41,7 @@ export default function AddExpenseButton() {
       setAmount("");
       setDescription("");
       setRequestedBy("");
+      setDocumentUrl("");
       router.refresh();
     } catch (err: any) {
       setError(err.message);
@@ -116,6 +120,12 @@ export default function AddExpenseButton() {
                   placeholder="e.g. John Doe, Grade 1 Teacher"
                 />
               </div>
+
+              <Base64DocumentUpload 
+                label="Attach Receipt/Voucher (Optional)"
+                value={documentUrl}
+                onChange={setDocumentUrl}
+              />
               
               <div className="pt-4 flex justify-end space-x-3">
                 <button

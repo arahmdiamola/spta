@@ -8,7 +8,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { amount, description, requestedBy } = body;
+    const { amount, description, requestedBy, documentUrl } = body;
 
     if (!amount || amount <= 0 || !description || !requestedBy) {
       return NextResponse.json({ error: "Invalid expense data" }, { status: 400 });
@@ -19,6 +19,7 @@ export async function POST(request: Request) {
         amount: parseFloat(amount),
         description,
         requestedBy,
+        documentUrl,
       },
     });
 

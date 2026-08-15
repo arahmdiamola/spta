@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Users, Calendar, AlertTriangle, ArrowRight, Wallet, ReceiptText } from "lucide-react";
+import { Users, Calendar, AlertTriangle, ArrowRight, Wallet, ReceiptText, Paperclip } from "lucide-react";
 import prisma from "@/lib/prisma";
 import AddExpenseButton from "./AddExpenseButton";
 import { format } from "date-fns";
@@ -108,6 +108,20 @@ export default async function Home() {
                         <span>Requested by: {expense.requestedBy}</span>
                         <span>•</span>
                         <span>{format(new Date(expense.date), "MMM d, yyyy")}</span>
+                        {expense.documentUrl && (
+                          <>
+                            <span>•</span>
+                            <a 
+                              href={expense.documentUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="flex items-center space-x-1 text-indigo-600 hover:text-indigo-800 transition-colors bg-indigo-50 px-2 py-0.5 rounded"
+                            >
+                              <Paperclip size={12} />
+                              <span>View Receipt</span>
+                            </a>
+                          </>
+                        )}
                       </div>
                     </div>
                     <div className="font-bold text-rose-600 text-lg">

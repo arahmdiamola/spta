@@ -6,6 +6,7 @@ import AddChildButton from "./AddChildButton";
 import AddContributionButton from "./AddContributionButton";
 import ParentPhotoUpload from "@/components/ParentPhotoUpload";
 import IdCardPreview from "@/components/IdCardPreview";
+import SimpleQrPreview from "@/components/SimpleQrPreview";
 import SettlePenaltyButton from "./SettlePenaltyButton";
 import { getSession } from "@/lib/auth";
 
@@ -107,6 +108,7 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
           </div>
 
           <IdCardPreview parent={parent} settings={idCardSettings} userRole={session?.user?.role} />
+          <SimpleQrPreview parent={parent} settings={idCardSettings} userRole={session?.user?.role} />
         </div>
 
         {/* Middle/Right Column: Children & Penalties */}
