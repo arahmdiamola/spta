@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Edit2, Trash2, X, Shield, ShieldAlert } from "lucide-react";
-import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 
 type User = {
   id: string;
@@ -136,7 +136,7 @@ export default function UserManagementTable({ initialUsers, currentUserId }: { i
                     </span>
                   </td>
                   <td className="p-4 text-sm text-slate-500">
-                    {format(new Date(user.createdAt), "MMM d, yyyy")}
+                    {formatInTimeZone(new Date(user.createdAt), 'Asia/Manila', "MMM d, yyyy")}
                   </td>
                   <td className="p-4 text-right space-x-2">
                     <button

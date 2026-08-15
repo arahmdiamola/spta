@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
 import Link from "next/link";
 import { ArrowLeft, AlertTriangle, CreditCard, Receipt } from "lucide-react";
-import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import AddChildButton from "./AddChildButton";
 import AddContributionButton from "./AddContributionButton";
 import ParentPhotoUpload from "@/components/ParentPhotoUpload";
@@ -163,7 +163,7 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
                   <div key={penalty.id} className={`text-sm flex justify-between items-center p-3 rounded-xl border ${penalty.isPaid ? 'bg-slate-50 border-slate-100' : 'bg-white border-rose-200'}`}>
                     <div>
                       <span className={`font-semibold ${penalty.isPaid ? 'text-slate-700' : 'text-rose-800'}`}>{penalty.event.name}</span>
-                      <p className="text-xs text-slate-500 mt-0.5">Absent - ₱{penalty.amount} • {format(new Date(penalty.event.date), "MMM d, yyyy")}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">Absent - ₱{penalty.amount} • {formatInTimeZone(new Date(penalty.event.date), 'Asia/Manila', "MMM d, yyyy")}</p>
                     </div>
                     <div className="flex items-center space-x-3">
                       {penalty.isPaid ? (
@@ -239,7 +239,7 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
                             .filter(c => c.feeCategoryId === fee.id)
                             .map(c => (
                               <div key={c.id} className="flex justify-between items-center text-sm">
-                                <span className="text-slate-500">{format(new Date(c.datePaid), "MMM d, yyyy h:mm a")}</span>
+                                <span className="text-slate-500">{formatInTimeZone(new Date(c.datePaid), 'Asia/Manila', "MMM d, yyyy h:mm a")}</span>
                                 <span className="font-medium text-slate-700">₱{c.amountPaid}</span>
                               </div>
                             ))}
@@ -263,7 +263,7 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
                       .filter(c => !c.feeCategoryId)
                       .map(c => (
                         <div key={c.id} className="flex justify-between items-center text-sm">
-                          <span className="text-slate-500">{format(new Date(c.datePaid), "MMM d, yyyy h:mm a")}</span>
+                          <span className="text-slate-500">{formatInTimeZone(new Date(c.datePaid), 'Asia/Manila', "MMM d, yyyy h:mm a")}</span>
                           <span className="font-medium text-slate-700">₱{c.amountPaid}</span>
                         </div>
                       ))}

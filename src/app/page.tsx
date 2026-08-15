@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Users, Calendar, AlertTriangle, ArrowRight, Wallet, ReceiptText, Paperclip } from "lucide-react";
 import prisma from "@/lib/prisma";
 import AddExpenseButton from "./AddExpenseButton";
-import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 
 import { getSession } from "@/lib/auth";
 
@@ -107,7 +107,7 @@ export default async function Home() {
                       <div className="flex items-center space-x-2 text-xs text-slate-500 mt-1">
                         <span>Requested by: {expense.requestedBy}</span>
                         <span>•</span>
-                        <span>{format(new Date(expense.date), "MMM d, yyyy")}</span>
+                        <span>{formatInTimeZone(new Date(expense.date), 'Asia/Manila', "MMM d, yyyy")}</span>
                         {expense.documentUrl && (
                           <>
                             <span>•</span>

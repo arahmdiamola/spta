@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
 import Link from "next/link";
 import { Calendar, Plus, Users, Clock } from "lucide-react";
-import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 
 export const dynamic = "force-dynamic";
 
@@ -61,7 +61,7 @@ export default async function EventsPage() {
                   <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${style.color} ${style.bg} ${style.border} border`}>
                     {style.label}
                   </span>
-                  <span className="text-xs text-slate-400">{format(new Date(event.date), "MMM d, yyyy")}</span>
+                  <span className="text-xs text-slate-400">{formatInTimeZone(new Date(event.date), 'Asia/Manila', "MMM d, yyyy")}</span>
                 </div>
                 <h3 className="text-lg font-bold text-slate-900 group-hover:text-indigo-700 transition-colors">{event.name}</h3>
                 <div className="mt-4 flex items-center space-x-4 text-sm text-slate-500">

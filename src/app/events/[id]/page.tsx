@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
 import Link from "next/link";
 import { ArrowLeft, Users, Clock, AlertTriangle, CheckCircle } from "lucide-react";
-import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import FinalizeButton from "./FinalizeButton";
 import { getSession } from "@/lib/auth";
 import RemoveTimeoutButton from "./RemoveTimeoutButton";
@@ -48,7 +48,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
               {style.label}
             </span>
           </div>
-          <p className="text-slate-500">{format(new Date(event.date), "MMMM d, yyyy 'at' h:mm a")}</p>
+          <p className="text-slate-500">{formatInTimeZone(new Date(event.date), 'Asia/Manila', "MMMM d, yyyy 'at' h:mm a")}</p>
         </div>
       </header>
 
@@ -116,12 +116,12 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
                   <tr key={att.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-6 py-4 font-semibold text-slate-900">{att.parent.name}</td>
                     <td className="px-6 py-4 text-sm text-slate-500">
-                      {att.timeIn ? format(new Date(att.timeIn), "h:mm a") : "—"}
+                      {att.timeIn ? formatInTimeZone(new Date(att.timeIn), 'Asia/Manila', "h:mm a") : "—"}
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-500 flex items-center">
                       {att.timeOut ? (
                         <>
-                          {format(new Date(att.timeOut), "h:mm a")}
+                          {formatInTimeZone(new Date(att.timeOut), 'Asia/Manila', "h:mm a")}
                           {isSuperAdmin && <RemoveTimeoutButton attendanceId={att.id} />}
                         </>
                       ) : (
