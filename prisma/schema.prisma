@@ -63,13 +63,24 @@ model Settings {
   value String
 }
 
+model FeeCategory {
+  id            String         @id @default(uuid())
+  name          String
+  amount        Float
+  type          String         // 'PER_PARENT' or 'PER_STUDENT'
+  year          Int
+  contributions Contribution[]
+}
+
 model Contribution {
-  id         String   @id @default(uuid())
-  parentId   String
-  parent     Parent   @relation(fields: [parentId], references: [id])
-  year       Int
-  amountPaid Float
-  datePaid   DateTime @default(now())
+  id            String       @id @default(uuid())
+  parentId      String
+  parent        Parent       @relation(fields: [parentId], references: [id])
+  feeCategoryId String?
+  feeCategory   FeeCategory? @relation(fields: [feeCategoryId], references: [id])
+  year          Int
+  amountPaid    Float
+  datePaid      DateTime     @default(now())
 }
 
 model Penalty {

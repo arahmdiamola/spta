@@ -27,10 +27,16 @@ export default function Navigation({ session }: { session: any }) {
           <span className="font-medium text-sm tracking-wide">Dashboard</span>
         </Link>
         {!isTeacher && (
-          <Link href="/parents" onClick={closeMenu} className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors ${pathname.startsWith('/parents') ? 'bg-indigo-600/20 text-indigo-200 border border-indigo-500/20' : 'hover:bg-indigo-900 text-slate-300'}`}>
-            <Users size={20} className={pathname.startsWith('/parents') ? 'text-indigo-400' : 'text-slate-400'} />
-            <span className="font-medium text-sm tracking-wide">Parents</span>
-          </Link>
+          <>
+            <Link href="/parents" onClick={closeMenu} className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors ${pathname.startsWith('/parents') ? 'bg-indigo-600/20 text-indigo-200 border border-indigo-500/20' : 'hover:bg-indigo-900 text-slate-300'}`}>
+              <Users size={20} className={pathname.startsWith('/parents') ? 'text-indigo-400' : 'text-slate-400'} />
+              <span className="font-medium text-sm tracking-wide">Parents</span>
+            </Link>
+            <Link href="/finances" onClick={closeMenu} className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors ${pathname.startsWith('/finances') ? 'bg-indigo-600/20 text-indigo-200 border border-indigo-500/20' : 'hover:bg-indigo-900 text-slate-300'}`}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={pathname.startsWith('/finances') ? 'text-indigo-400' : 'text-slate-400'}><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              <span className="font-medium text-sm tracking-wide">Finances</span>
+            </Link>
+          </>
         )}
         <Link href="/events" onClick={closeMenu} className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors ${pathname.startsWith('/events') ? 'bg-indigo-600/20 text-indigo-200 border border-indigo-500/20' : 'hover:bg-indigo-900 text-slate-300'}`}>
           <Calendar size={20} className={pathname.startsWith('/events') ? 'text-indigo-400' : 'text-slate-400'} />
@@ -88,10 +94,16 @@ export default function Navigation({ session }: { session: any }) {
           <span className="text-[10px] mt-1 font-medium">Dashboard</span>
         </Link>
         {!isTeacher && (
-          <Link href="/parents" className={`flex flex-col items-center p-2 rounded-xl transition-colors ${pathname.startsWith('/parents') ? 'text-indigo-300' : 'text-slate-400 hover:text-slate-300'}`}>
-            <Users size={24} />
-            <span className="text-[10px] mt-1 font-medium">Parents</span>
-          </Link>
+          <>
+            <Link href="/parents" className={`flex flex-col items-center p-2 rounded-xl transition-colors ${pathname.startsWith('/parents') ? 'text-indigo-300' : 'text-slate-400 hover:text-slate-300'}`}>
+              <Users size={24} />
+              <span className="text-[10px] mt-1 font-medium">Parents</span>
+            </Link>
+            <Link href="/finances" className={`flex flex-col items-center p-2 rounded-xl transition-colors ${pathname.startsWith('/finances') ? 'text-indigo-300' : 'text-slate-400 hover:text-slate-300'}`}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              <span className="text-[10px] mt-1 font-medium">Finances</span>
+            </Link>
+          </>
         )}
         <Link href="/scanner" className={`flex flex-col items-center p-2 rounded-xl transition-colors -mt-6 bg-indigo-600 rounded-full shadow-lg border-4 border-slate-50 ${pathname.startsWith('/scanner') ? 'text-white bg-indigo-500' : 'text-indigo-50 hover:bg-indigo-500'}`}>
           <div className="p-2">

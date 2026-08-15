@@ -4,9 +4,21 @@ import { useState } from "react";
 import { PlusCircle, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-export default function AddContributionButton({ parentId }: { parentId: string }) {
+export default function AddContributionButton({ 
+  parentId, 
+  feeCategoryId, 
+  suggestedAmount,
+  label = "Record Payment",
+  compact = false
+}: { 
+  parentId: string, 
+  feeCategoryId?: string, 
+  suggestedAmount?: number,
+  label?: string,
+  compact?: boolean
+}) {
   const [isOpen, setIsOpen] = useState(false);
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState(suggestedAmount ? String(suggestedAmount) : "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -20,7 +32,10 @@ export default function AddContributionButton({ parentId }: { parentId: string }
       const res = await fetch(`/api/parents/${parentId}/contributions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amountPaid: parseFloat(amount) }),
+        body: JSON.stringify({ 
+          amountPaid: parseFloat(amount),
+          feeCategoryId 
+        }),
       });
 
       if (!res.ok) {
@@ -41,11 +56,18 @@ export default function AddContributionButton({ parentId }: { parentId: string }
   return (
     <>
       <button 
-        onClick={() => setIsOpen(true)}
-        className="text-sm bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-medium px-4 py-2 rounded-xl transition-colors flex items-center space-x-2"
+        onClick={() => {
+          if (suggestedAmount) setAmount(String(suggestedAmount));
+          setIsOpen(true);
+        }}
+        className={
+          compact 
+            ? "text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors flex items-center space-x-1"
+            : "text-sm bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-medium px-4 py-2 rounded-xl transition-colors flex items-center space-x-2"
+        }
       >
-        <PlusCircle size={16} />
-        <span>Record Payment</span>
+        {!compact && <PlusCircle size={16} />}
+        <span>{label}</span>
       </button>
 
       {isOpen && (

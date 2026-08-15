@@ -8,8 +8,11 @@ import ArchiveDatabaseButton from "@/components/ArchiveDatabaseButton";
 import ClearArchivesButton from "@/components/ClearArchivesButton";
 
 export default function SettingsPage() {
-  const [parentFee, setParentFee] = useState("0");
-  const [studentFees, setStudentFees] = useState<{ name: string; amount: number }[]>([]);
+  const [feeCategories, setFeeCategories] = useState<any[]>([]);
+  const [newFeeName, setNewFeeName] = useState("");
+  const [newFeeAmount, setNewFeeAmount] = useState("");
+  const [newFeeType, setNewFeeType] = useState("PER_STUDENT");
+  const [isAddingFee, setIsAddingFee] = useState(false);
   const [meetingPenalty, setMeetingPenalty] = useState("100");
   const [assemblyPenalty, setAssemblyPenalty] = useState("100");
   const [voluntaryWorkPenalty, setVoluntaryWorkPenalty] = useState("100");
@@ -36,33 +39,13 @@ export default function SettingsPage() {
     fetch("/api/settings")
       .then((res) => res.json())
       .then((data) => {
-        if (data.PER_PARENT_MEMBERSHIP_FEE) {
-          setParentFee(data.PER_PARENT_MEMBERSHIP_FEE);
-        }
-        if (data.MEETING_ABSENCE_PENALTY) setMeetingPenalty(data.MEETING_ABSENCE_PENALTY);
-        if (data.ASSEMBLY_ABSENCE_PENALTY) setAssemblyPenalty(data.ASSEMBLY_ABSENCE_PENALTY);
-        if (data.VOLUNTARY_WORK_ABSENCE_PENALTY) setVoluntaryWorkPenalty(data.VOLUNTARY_WORK_ABSENCE_PENALTY);
-        
-        if (data.SCHOOL_NAME) setSchoolName(data.SCHOOL_NAME);
-        if (data.SCHOOL_ADDRESS) setSchoolAddress(data.SCHOOL_ADDRESS);
-        if (data.SCHOOL_LOGO) setSchoolLogo(data.SCHOOL_LOGO);
-        if (data.PRINCIPAL_NAME) setPrincipalName(data.PRINCIPAL_NAME);
-        if (data.PRINCIPAL_SIGNATURE) setPrincipalSignature(data.PRINCIPAL_SIGNATURE);
-        if (data.PTA_PRESIDENT_NAME) setPtaPresidentName(data.PTA_PRESIDENT_NAME);
-        if (data.PTA_PRESIDENT_SIGNATURE) setPtaPresidentSignature(data.PTA_PRESIDENT_SIGNATURE);
-        if (data.ID_CARD_TEMPLATE) setIdCardTemplate(data.ID_CARD_TEMPLATE);
-        if (data.CUSTOM_TEMPLATE_FRONT) setCustomTemplateFront(data.CUSTOM_TEMPLATE_FRONT);
-        if (data.CUSTOM_TEMPLATE_BACK) setCustomTemplateBack(data.CUSTOM_TEMPLATE_BACK);
-
-        if (data.PER_STUDENT_CONTRIBUTIONS) {
-          try {
-            setStudentFees(JSON.parse(data.PER_STUDENT_CONTRIBUTIONS));
-          } catch (e) {
-            console.error("Failed to parse student fees");
-          }
-        }
         setLoading(false);
       });
+
+    fetch("/api/fees")
+      .then(res => res.json())
+      .then(data => setFeeCategories(data))
+      .catch(console.error);
       
       // Fetch user role
       fetch("/api/auth/me")
@@ -80,8 +63,6 @@ export default function SettingsPage() {
     setMessage("");
     try {
       const payload = {
-        PER_PARENT_MEMBERSHIP_FEE: parentFee,
-        PER_STUDENT_CONTRIBUTIONS: JSON.stringify(studentFees),
         MEETING_ABSENCE_PENALTY: meetingPenalty,
         ASSEMBLY_ABSENCE_PENALTY: assemblyPenalty,
         VOLUNTARY_WORK_ABSENCE_PENALTY: voluntaryWorkPenalty,
@@ -108,13 +89,45 @@ export default function SettingsPage() {
     setSaving(false);
   };
 
-  const addStudentFee = () => setStudentFees([...studentFees, { name: "", amount: 0 }]);
-  const updateStudentFee = (index: number, field: string, value: string | number) => {
-    const newFees = [...studentFees];
-    newFees[index] = { ...newFees[index], [field]: value } as any;
-    setStudentFees(newFees);
+  const handleAddFee = async () => {
+    if (!newFeeName || !newFeeAmount) return;
+    try {
+      const res = await fetch("/api/fees", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newFeeName,
+          amount: newFeeAmount,
+          type: newFeeType,
+          year: new Date().getFullYear()
+        })
+      });
+      if (res.ok) {
+        const fee = await res.json();
+        setFeeCategories([...feeCategories, fee]);
+        setNewFeeName("");
+        setNewFeeAmount("");
+        setIsAddingFee(false);
+      }
+    } catch (e) {
+      console.error(e);
+    }
   };
-  const removeStudentFee = (index: number) => setStudentFees(studentFees.filter((_, i) => i !== index));
+
+  const handleDeleteFee = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this fee?")) return;
+    try {
+      const res = await fetch(`/api/fees/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setFeeCategories(feeCategories.filter(f => f.id !== id));
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to delete fee");
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   if (loading) return <div className="p-8 text-center text-slate-500">Loading settings...</div>;
 
@@ -144,32 +157,15 @@ export default function SettingsPage() {
 
       <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 space-y-8">
         
-        {/* Per Parent Membership Fee */}
-        <div>
-          <h2 className="text-xl font-bold text-slate-900 mb-2">Per Parent Membership Fee</h2>
-          <p className="text-sm text-slate-500 mb-4">A flat fee applied to each parent profile, regardless of the number of children.</p>
-          <div className="max-w-xs">
-            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Amount (₱)</label>
-            <input 
-              type="number" 
-              value={parentFee}
-              onChange={(e) => setParentFee(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium text-slate-900" 
-            />
-          </div>
-        </div>
-
-        <hr className="border-slate-100" />
-
-        {/* Per Student Contributions */}
+        {/* Fee Categories */}
         <div>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-xl font-bold text-slate-900 mb-1">Per Student Contributions</h2>
-              <p className="text-sm text-slate-500">These fees are multiplied by the number of children a parent has.</p>
+              <h2 className="text-xl font-bold text-slate-900 mb-1">Fee Categories</h2>
+              <p className="text-sm text-slate-500">Define the specific fees parents must pay.</p>
             </div>
             <button 
-              onClick={addStudentFee}
+              onClick={() => setIsAddingFee(true)}
               className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center space-x-2"
             >
               <Plus size={16} />
@@ -178,40 +174,77 @@ export default function SettingsPage() {
           </div>
 
           <div className="space-y-3">
-            {studentFees.length === 0 ? (
-              <p className="text-slate-400 text-sm italic">No per-student fees configured.</p>
+            {feeCategories.length === 0 ? (
+              <p className="text-slate-400 text-sm italic">No fees configured.</p>
             ) : (
-              studentFees.map((fee, idx) => (
-                <div key={idx} className="flex items-center space-x-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
-                  <div className="flex-1">
-                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Fee Name</label>
-                    <input 
-                      type="text" 
-                      value={fee.name}
-                      onChange={(e) => updateStudentFee(idx, 'name', e.target.value)}
-                      placeholder="e.g. PTA Fee, ID Lace"
-                      className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-500 text-sm" 
-                    />
+              feeCategories.map((fee) => (
+                <div key={fee.id} className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                  <div>
+                    <p className="font-semibold text-slate-900">{fee.name}</p>
+                    <p className="text-xs text-slate-500 uppercase tracking-wider">{fee.type === 'PER_PARENT' ? 'Per Parent' : 'Per Student'} • {fee.year}</p>
                   </div>
-                  <div className="w-32">
-                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Amount (₱)</label>
-                    <input 
-                      type="number" 
-                      value={Number.isNaN(fee.amount) ? "" : fee.amount}
-                      onChange={(e) => updateStudentFee(idx, 'amount', e.target.value === "" ? "" : parseFloat(e.target.value))}
-                      className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-500 text-sm" 
-                    />
-                  </div>
-                  <div className="pt-5">
+                  <div className="flex items-center space-x-4">
+                    <p className="font-bold text-slate-900">₱{fee.amount}</p>
                     <button 
-                      onClick={() => removeStudentFee(idx)}
+                      onClick={() => handleDeleteFee(fee.id)}
                       className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors"
                     >
-                      <Trash2 size={20} />
+                      <Trash2 size={18} />
                     </button>
                   </div>
                 </div>
               ))
+            )}
+
+            {isAddingFee && (
+              <div className="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100 mt-4 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Fee Name</label>
+                    <input 
+                      type="text" 
+                      value={newFeeName}
+                      onChange={(e) => setNewFeeName(e.target.value)}
+                      placeholder="e.g. PTA Fee"
+                      className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-500 text-sm" 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Amount (₱)</label>
+                    <input 
+                      type="number" 
+                      value={newFeeAmount}
+                      onChange={(e) => setNewFeeAmount(e.target.value)}
+                      className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-500 text-sm" 
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Charge Type</label>
+                  <select 
+                    value={newFeeType}
+                    onChange={(e) => setNewFeeType(e.target.value)}
+                    className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-500 text-sm bg-white"
+                  >
+                    <option value="PER_STUDENT">Per Student (multiplied by # of children)</option>
+                    <option value="PER_PARENT">Per Parent (flat fee per family)</option>
+                  </select>
+                </div>
+                <div className="flex justify-end space-x-2 pt-2">
+                  <button 
+                    onClick={() => setIsAddingFee(false)}
+                    className="px-4 py-2 text-sm text-slate-500 hover:bg-slate-100 rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={handleAddFee}
+                    className="px-4 py-2 text-sm text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors font-medium"
+                  >
+                    Save Fee
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         </div>

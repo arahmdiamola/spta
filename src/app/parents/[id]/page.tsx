@@ -1,7 +1,6 @@
 import prisma from "@/lib/prisma";
 import Link from "next/link";
-import { ArrowLeft, User, QrCode, CreditCard, AlertTriangle } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
+import { ArrowLeft, AlertTriangle, CreditCard, Receipt } from "lucide-react";
 import { format } from "date-fns";
 import AddChildButton from "./AddChildButton";
 import AddContributionButton from "./AddContributionButton";
@@ -18,7 +17,7 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
     include: {
       children: true,
       penalties: { include: { event: true } },
-      contributions: true,
+      contributions: { include: { feeCategory: true } },
       attendances: { include: { event: true }, orderBy: { timeIn: 'desc' }, take: 5 }
     }
   });
@@ -28,12 +27,9 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
   }
 
   const unpaidPenalties = parent.penalties.filter(p => !p.isPaid);
-  const totalUnpaid = unpaidPenalties.reduce((sum, p) => sum + p.amount, 0);
+  const totalUnpaidPenalties = unpaidPenalties.reduce((sum, p) => sum + p.amount, 0);
 
   const settingsRaw = await prisma.settings.findMany();
-  let parentFee = 0;
-  let studentFeeSum = 0;
-
   const idCardSettings = {
     schoolName: "",
     schoolAddress: "",
@@ -46,17 +42,7 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
     customTemplateFront: "",
     customTemplateBack: ""
   };
-
   settingsRaw.forEach(s => {
-    if (s.key === "PER_PARENT_MEMBERSHIP_FEE") parentFee = parseFloat(s.value) || 0;
-    if (s.key === "PER_STUDENT_CONTRIBUTIONS") {
-      try {
-        const fees = JSON.parse(s.value);
-        studentFeeSum = fees.reduce((sum: number, f: any) => sum + (parseFloat(f.amount) || 0), 0);
-      } catch (e) {}
-    }
-    
-    // ID Card Settings
     if (s.key === "SCHOOL_NAME") idCardSettings.schoolName = s.value;
     if (s.key === "SCHOOL_ADDRESS") idCardSettings.schoolAddress = s.value;
     if (s.key === "SCHOOL_LOGO") idCardSettings.schoolLogo = s.value;
@@ -69,8 +55,32 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
     if (s.key === "CUSTOM_TEMPLATE_BACK") idCardSettings.customTemplateBack = s.value;
   });
 
-  const totalDue = parentFee + (studentFeeSum * parent.children.length);
-  const totalPaid = parent.contributions.reduce((sum, c) => sum + c.amountPaid, 0);
+  // Calculate fees
+  const feeCategories = await prisma.feeCategory.findMany({ orderBy: { name: 'asc' } });
+  
+  let totalDueAll = 0;
+  let totalPaidAll = 0;
+
+  const feeSummaries = feeCategories.map(fee => {
+    const due = fee.type === 'PER_PARENT' ? fee.amount : fee.amount * parent.children.length;
+    const paid = parent.contributions
+      .filter(c => c.feeCategoryId === fee.id)
+      .reduce((sum, c) => sum + c.amountPaid, 0);
+    const balance = due - paid;
+    
+    totalDueAll += due;
+    totalPaidAll += paid;
+
+    return { ...fee, due, paid, balance };
+  });
+
+  // Legacy or Uncategorized contributions
+  const uncategorizedPaid = parent.contributions
+    .filter(c => !c.feeCategoryId)
+    .reduce((sum, c) => sum + c.amountPaid, 0);
+  
+  totalPaidAll += uncategorizedPaid;
+  const grandBalance = totalDueAll - totalPaidAll;
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500">
@@ -96,14 +106,12 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
             </div>
           </div>
 
-          {/* ID Card Preview */}
           <IdCardPreview parent={parent} settings={idCardSettings} userRole={session?.user?.role} />
         </div>
 
         {/* Middle/Right Column: Children & Penalties */}
         <div className="lg:col-span-2 space-y-8">
           
-          {/* Children */}
           <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-slate-900">Children</h3>
@@ -126,7 +134,6 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
             </div>
           </div>
 
-          {/* Absences & Penalties */}
           <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
             <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center space-x-2">
               <AlertTriangle size={20} className="text-slate-500" />
@@ -135,8 +142,8 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
 
             <div className="mb-6 bg-rose-50 border border-rose-100 rounded-2xl p-4 flex items-center justify-between">
               <div>
-                <p className="text-rose-700 text-sm font-medium">Total Unpaid Amount</p>
-                <p className="font-bold text-2xl text-rose-900">₱{totalUnpaid}</p>
+                <p className="text-rose-700 text-sm font-medium">Total Unpaid Penalties</p>
+                <p className="font-bold text-2xl text-rose-900">₱{totalUnpaidPenalties}</p>
               </div>
               <div className="text-right">
                 <p className="text-slate-600 text-sm font-medium">Total Absences</p>
@@ -169,47 +176,107 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
             )}
           </div>
 
-          {/* Voluntary Contributions */}
           <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-slate-900 flex items-center space-x-2">
-                <CreditCard size={20} className="text-slate-500" />
-                <span>Voluntary Contributions</span>
+                <Receipt size={20} className="text-slate-500" />
+                <span>Contributions & Fees</span>
               </h3>
-              <AddContributionButton parentId={parent.id} />
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                <p className="text-slate-500 text-sm font-medium">Total Due</p>
-                <p className="font-bold text-xl text-slate-900">₱{totalDue}</p>
+                <p className="text-slate-500 text-sm font-medium">Total Outstanding Balance</p>
+                <p className="font-bold text-xl text-slate-900">₱{grandBalance > 0 ? grandBalance : 0}</p>
                 <div className="mt-1 text-xs text-slate-400 space-y-0.5">
-                  <p>Parent Fee: ₱{parentFee}</p>
-                  <p>Student Fees: ₱{studentFeeSum} × {parent.children.length}</p>
+                  <p>Total Due: ₱{totalDueAll}</p>
                 </div>
               </div>
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                <p className="text-slate-500 text-sm font-medium">Total Paid</p>
-                <p className="font-bold text-xl text-emerald-600">₱{totalPaid}</p>
-                <p className="mt-1 text-xs text-slate-400">Balance: ₱{totalDue - totalPaid}</p>
+              <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100">
+                <p className="text-emerald-700 text-sm font-medium">Total Paid</p>
+                <p className="font-bold text-xl text-emerald-600">₱{totalPaidAll}</p>
               </div>
             </div>
 
-            <div className="space-y-3">
-              {parent.contributions.length === 0 ? (
-                <p className="text-slate-500 text-sm">No payments recorded yet.</p>
-              ) : (
-                parent.contributions.map((c) => (
-                  <div key={c.id} className="text-sm flex justify-between items-center p-3 rounded-xl border border-slate-100 bg-slate-50">
-                    <div>
-                      <span className="font-semibold text-slate-700">Payment</span>
-                      <p className="text-xs text-slate-500 mt-0.5">{format(new Date(c.datePaid), "MMM d, yyyy h:mm a")}</p>
+            {feeSummaries.length === 0 ? (
+              <p className="text-slate-500 text-sm italic">No fee categories defined in Settings.</p>
+            ) : (
+              <div className="space-y-4">
+                {feeSummaries.map(fee => (
+                  <div key={fee.id} className="border border-slate-100 rounded-2xl overflow-hidden">
+                    <div className="bg-slate-50 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <h4 className="font-bold text-slate-900">{fee.name} <span className="text-xs font-normal text-slate-500 ml-2 border border-slate-200 px-2 py-0.5 rounded-full bg-white">{fee.year}</span></h4>
+                        <p className="text-sm text-slate-500 mt-1">
+                          {fee.type === 'PER_PARENT' ? 'Per Parent' : `Per Student (₱${fee.amount} × ${parent.children.length})`}
+                        </p>
+                      </div>
+                      <div className="text-right flex items-center justify-between sm:block">
+                        <div>
+                          <p className="text-xs text-slate-500 uppercase font-semibold tracking-wider">Balance</p>
+                          <p className={`font-bold ${fee.balance > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>₱{fee.balance}</p>
+                        </div>
+                        {fee.balance > 0 ? (
+                          <div className="flex space-x-2 mt-2">
+                            <AddContributionButton parentId={parent.id} feeCategoryId={fee.id} label="Partial" compact={true} />
+                            <AddContributionButton parentId={parent.id} feeCategoryId={fee.id} suggestedAmount={fee.balance} label="Settle" compact={true} />
+                          </div>
+                        ) : (
+                          <div className="mt-2 text-xs font-medium text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full inline-block">
+                            Fully Paid
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <span className="font-bold text-emerald-600">+ ₱{c.amountPaid}</span>
+                    {/* List payments for this fee */}
+                    {parent.contributions.filter(c => c.feeCategoryId === fee.id).length > 0 && (
+                      <div className="p-3 bg-white border-t border-slate-100">
+                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Payment History</p>
+                        <div className="space-y-2">
+                          {parent.contributions
+                            .filter(c => c.feeCategoryId === fee.id)
+                            .map(c => (
+                              <div key={c.id} className="flex justify-between items-center text-sm">
+                                <span className="text-slate-500">{format(new Date(c.datePaid), "MMM d, yyyy h:mm a")}</span>
+                                <span className="font-medium text-slate-700">₱{c.amountPaid}</span>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                ))
-              )}
-            </div>
+                ))}
+              </div>
+            )}
+
+            {uncategorizedPaid > 0 && (
+              <div className="mt-6 border border-slate-100 rounded-2xl overflow-hidden">
+                <div className="bg-slate-50 p-4">
+                  <h4 className="font-bold text-slate-900">Legacy / Uncategorized Payments</h4>
+                  <p className="text-sm text-slate-500">Payments made before specific fee tracking was enabled.</p>
+                </div>
+                <div className="p-3 bg-white border-t border-slate-100">
+                  <div className="space-y-2">
+                    {parent.contributions
+                      .filter(c => !c.feeCategoryId)
+                      .map(c => (
+                        <div key={c.id} className="flex justify-between items-center text-sm">
+                          <span className="text-slate-500">{format(new Date(c.datePaid), "MMM d, yyyy h:mm a")}</span>
+                          <span className="font-medium text-slate-700">₱{c.amountPaid}</span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Uncategorized Add Payment fallback */}
+            {feeSummaries.length === 0 && (
+              <div className="mt-4">
+                <AddContributionButton parentId={parent.id} />
+              </div>
+            )}
+
           </div>
 
         </div>

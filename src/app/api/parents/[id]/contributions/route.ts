@@ -5,7 +5,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   try {
     const { id } = await params;
     const body = await request.json();
-    const { amountPaid } = body;
+    const { amountPaid, feeCategoryId } = body;
 
     if (!amountPaid || amountPaid <= 0) {
       return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
@@ -16,6 +16,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         parentId: id,
         year: new Date().getFullYear(),
         amountPaid: parseFloat(amountPaid),
+        feeCategoryId: feeCategoryId || null,
       },
     });
 
