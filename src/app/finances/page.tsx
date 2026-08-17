@@ -4,8 +4,10 @@ import Link from "next/link";
 
 
 import ExportFinancesButton from "@/components/ExportFinancesButton";
+import clsx from "clsx";
 
-export default async function FinancesPage() {
+export default async function FinancesPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+  const resolvedParams = await searchParams;
   const feeCategories = await prisma.feeCategory.findMany({
     orderBy: { name: 'asc' }
   });
@@ -56,6 +58,9 @@ export default async function FinancesPage() {
       .reduce((sum, c) => sum + c.amountPaid, 0);
   }, 0);
 
+  const currentTabId = resolvedParams?.tab || (reports.length > 0 ? reports[0].fee.id : "");
+  const activeReport = reports.find(r => r.fee.id === currentTabId);
+
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500">
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -89,24 +94,46 @@ export default async function FinancesPage() {
         </div>
       </div>
 
-      <div className="space-y-8">
-        {reports.map((report) => (
-          <div key={report.fee.id} className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+      <div className="space-y-6">
+        {reports.length > 0 && (
+          <div className="flex space-x-2 border-b border-slate-200 overflow-x-auto pb-px">
+            {reports.map((report) => {
+              const isActive = report.fee.id === currentTabId;
+              return (
+                <Link
+                  key={report.fee.id}
+                  href={`?tab=${report.fee.id}`}
+                  className={clsx(
+                    "whitespace-nowrap py-3 px-5 border-b-2 font-medium text-sm transition-colors",
+                    isActive
+                      ? "border-indigo-600 text-indigo-600"
+                      : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
+                  )}
+                >
+                  {report.fee.name}
+                </Link>
+              );
+            })}
+          </div>
+        )}
+
+        {activeReport && (
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
             <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between gap-4">
               <div>
-                <h2 className="text-xl font-bold text-slate-900">{report.fee.name}</h2>
+                <h2 className="text-xl font-bold text-slate-900">{activeReport.fee.name}</h2>
                 <p className="text-sm text-slate-500 mt-1">
-                  {report.fee.type === 'PER_PARENT' ? 'Per Parent' : 'Per Student'} • ₱{report.fee.amount}
+                  {activeReport.fee.type === 'PER_PARENT' ? 'Per Parent' : 'Per Student'} • ₱{activeReport.fee.amount}
                 </p>
               </div>
               <div className="flex gap-6 sm:text-right">
                 <div>
                   <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Collected</p>
-                  <p className="font-bold text-emerald-600">₱{report.collected}</p>
+                  <p className="font-bold text-emerald-600">₱{activeReport.collected}</p>
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Expected</p>
-                  <p className="font-bold text-slate-900">₱{report.expected}</p>
+                  <p className="font-bold text-slate-900">₱{activeReport.expected}</p>
                 </div>
               </div>
             </div>
@@ -123,13 +150,13 @@ export default async function FinancesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {report.parentDetails.filter(d => d.due > 0 || d.paid > 0).map((detail) => (
+                  {activeReport.parentDetails.filter(d => d.due > 0 || d.paid > 0).map((detail) => (
                     <tr key={detail.parent.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-4">
                         <Link href={`/parents/${detail.parent.id}`} className="font-medium text-indigo-600 hover:underline">
                           {detail.parent.name}
                         </Link>
-                        {report.fee.type === 'PER_STUDENT' && (
+                        {activeReport.fee.type === 'PER_STUDENT' && (
                           <span className="ml-2 text-xs text-slate-400">({detail.parent.children.length} kids)</span>
                         )}
                       </td>
@@ -157,7 +184,7 @@ export default async function FinancesPage() {
               </table>
             </div>
           </div>
-        ))}
+        )}
 
         {uncategorizedPaid > 0 && (
           <div className="bg-slate-50 rounded-3xl p-6 border border-slate-200">

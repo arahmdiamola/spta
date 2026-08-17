@@ -3,20 +3,35 @@ import prisma from "@/lib/prisma";
 import Link from "next/link";
 import BatchUploadButton from "./BatchUploadButton";
 import { getSession } from "@/lib/auth";
+import ParentSearch from "./ParentSearch";
+import Pagination from "./Pagination";
 
-export default async function ParentsPage() {
+const PAGE_SIZE = 10;
+
+export default async function ParentsPage({ searchParams }: { searchParams: Promise<{ q?: string; page?: string }> }) {
   const session = await getSession();
   const isSuperAdmin = session?.user?.role === "SUPER_ADMIN";
+  const resolvedParams = await searchParams;
+  const q = resolvedParams?.q || "";
+  const currentPage = parseInt(resolvedParams?.page || "1", 10);
+  
+  const where = q ? { name: { contains: q, mode: "insensitive" as const } } : {};
 
-  // Fetch parents from database
-  const parents = await prisma.parent.findMany({
-    include: {
-      children: true,
-      penalties: true,
-      contributions: true,
-    },
-    orderBy: { createdAt: 'desc' }
-  });
+  // Fetch parents from database with pagination and search
+  const [totalCount, parents] = await prisma.$transaction([
+    prisma.parent.count({ where }),
+    prisma.parent.findMany({
+      where,
+      skip: (currentPage - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+      include: {
+        children: true,
+        penalties: true,
+        contributions: true,
+      },
+      orderBy: { createdAt: 'desc' }
+    })
+  ]);
 
   const settings = await prisma.settings.findMany();
   let parentFee = 0;
@@ -57,14 +72,7 @@ export default async function ParentsPage() {
       </header>
 
       {/* Filters/Search */}
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-3">
-        <Search size={20} className="text-slate-400" />
-        <input 
-          type="text" 
-          placeholder="Search parents by name..." 
-          className="flex-1 bg-transparent border-none focus:outline-none text-slate-900 placeholder:text-slate-400"
-        />
-      </div>
+      <ParentSearch />
 
       {/* Parents List */}
       <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
@@ -159,6 +167,8 @@ export default async function ParentsPage() {
           </table>
         </div>
       </div>
+      
+      <Pagination totalPages={Math.ceil(totalCount / PAGE_SIZE)} currentPage={currentPage} />
     </div>
   );
 }
