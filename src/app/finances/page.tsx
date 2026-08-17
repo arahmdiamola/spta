@@ -1,65 +1,87 @@
 import prisma from "@/lib/prisma";
-import { Receipt, Search, Download } from "lucide-react";
+import { Receipt } from "lucide-react";
 import Link from "next/link";
-
-
 import ExportFinancesButton from "@/components/ExportFinancesButton";
+import Pagination from "../parents/Pagination";
 import clsx from "clsx";
 
-export default async function FinancesPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+const PAGE_SIZE = 10;
+
+export default async function FinancesPage({ searchParams }: { searchParams: Promise<{ tab?: string, page?: string }> }) {
   const resolvedParams = await searchParams;
+  
+  const [totalParents, totalChildren] = await Promise.all([
+    prisma.parent.count(),
+    prisma.child.count()
+  ]);
+
   const feeCategories = await prisma.feeCategory.findMany({
     orderBy: { name: 'asc' }
   });
 
-  const parents = await prisma.parent.findMany({
-    include: {
-      children: true,
-      contributions: true
-    },
-    orderBy: { name: 'asc' }
-  });
-
-  // Calculate high level summaries per fee category
-  const reports = feeCategories.map(fee => {
-    let expected = 0;
-    let collected = 0;
-
-    const parentDetails = parents.map(p => {
-      const due = fee.type === 'PER_PARENT' ? fee.amount : fee.amount * p.children.length;
-      const paid = p.contributions
-        .filter(c => c.feeCategoryId === fee.id)
-        .reduce((sum, c) => sum + c.amountPaid, 0);
-      
-      expected += due;
-      collected += paid;
-
-      return {
-        parent: p,
-        due,
-        paid,
-        balance: due - paid
-      };
+  const reports = await Promise.all(feeCategories.map(async (fee) => {
+    const expected = fee.type === 'PER_PARENT' ? fee.amount * totalParents : fee.amount * totalChildren;
+    const agg = await prisma.contribution.aggregate({
+      where: { feeCategoryId: fee.id },
+      _sum: { amountPaid: true }
     });
-
+    const collected = agg._sum.amountPaid || 0;
+    
     return {
       fee,
       expected,
       collected,
       balance: expected - collected,
-      parentDetails
     };
-  });
+  }));
 
-  // Uncategorized contributions
-  const uncategorizedPaid = parents.reduce((total, p) => {
-    return total + p.contributions
-      .filter(c => !c.feeCategoryId)
-      .reduce((sum, c) => sum + c.amountPaid, 0);
-  }, 0);
+  const uncategorizedAgg = await prisma.contribution.aggregate({
+    where: { feeCategoryId: null },
+    _sum: { amountPaid: true }
+  });
+  const uncategorizedPaid = uncategorizedAgg._sum.amountPaid || 0;
 
   const currentTabId = resolvedParams?.tab || (reports.length > 0 ? reports[0].fee.id : "");
   const activeReport = reports.find(r => r.fee.id === currentTabId);
+  const currentPage = parseInt(resolvedParams?.page || "1", 10);
+
+  let activeReportDetails: any[] = [];
+  let totalPages = 0;
+
+  if (activeReport) {
+    const [totalActiveParents, paginatedParents] = await prisma.$transaction([
+      prisma.parent.count(),
+      prisma.parent.findMany({
+        skip: (currentPage - 1) * PAGE_SIZE,
+        take: PAGE_SIZE,
+        include: {
+          _count: { select: { children: true } },
+          contributions: {
+            where: { feeCategoryId: currentTabId }
+          }
+        },
+        orderBy: { name: 'asc' }
+      })
+    ]);
+
+    totalPages = Math.ceil(totalActiveParents / PAGE_SIZE);
+
+    activeReportDetails = paginatedParents.map(p => {
+      const due = activeReport.fee.type === 'PER_PARENT' 
+        ? activeReport.fee.amount 
+        : activeReport.fee.amount * p._count.children;
+        
+      const paid = p.contributions.reduce((sum, c) => sum + c.amountPaid, 0);
+      
+      return {
+        parent: p,
+        childCount: p._count.children,
+        due,
+        paid,
+        balance: due - paid
+      };
+    });
+  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500">
@@ -69,7 +91,7 @@ export default async function FinancesPage({ searchParams }: { searchParams: Pro
           <p className="text-slate-500 mt-1">Track fee collections and remittances</p>
         </div>
         <div>
-          <ExportFinancesButton reports={reports} />
+          <ExportFinancesButton />
         </div>
       </header>
 
@@ -150,14 +172,14 @@ export default async function FinancesPage({ searchParams }: { searchParams: Pro
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {activeReport.parentDetails.filter(d => d.due > 0 || d.paid > 0).map((detail) => (
+                  {activeReportDetails.map((detail) => (
                     <tr key={detail.parent.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-4">
                         <Link href={`/parents/${detail.parent.id}`} className="font-medium text-indigo-600 hover:underline">
                           {detail.parent.name}
                         </Link>
                         {activeReport.fee.type === 'PER_STUDENT' && (
-                          <span className="ml-2 text-xs text-slate-400">({detail.parent.children.length} kids)</span>
+                          <span className="ml-2 text-xs text-slate-400">({detail.childCount} kids)</span>
                         )}
                       </td>
                       <td className="px-6 py-4 text-right text-slate-600">₱{detail.due}</td>
@@ -183,6 +205,8 @@ export default async function FinancesPage({ searchParams }: { searchParams: Pro
                 </tbody>
               </table>
             </div>
+            
+            <Pagination totalPages={totalPages} currentPage={currentPage} />
           </div>
         )}
 

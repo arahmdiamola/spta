@@ -5,6 +5,7 @@ import BatchUploadButton from "./BatchUploadButton";
 import { getSession } from "@/lib/auth";
 import ParentSearch from "./ParentSearch";
 import Pagination from "./Pagination";
+import DeleteParentButton from "@/components/DeleteParentButton";
 
 const PAGE_SIZE = 10;
 
@@ -14,6 +15,7 @@ export default async function ParentsPage({ searchParams }: { searchParams: Prom
   const resolvedParams = await searchParams;
   const q = resolvedParams?.q || "";
   const currentPage = parseInt(resolvedParams?.page || "1", 10);
+  const sort = resolvedParams?.sort === "desc" ? "desc" : "asc";
   
   const where = q ? { name: { contains: q, mode: "insensitive" as const } } : {};
 
@@ -29,7 +31,7 @@ export default async function ParentsPage({ searchParams }: { searchParams: Prom
         penalties: true,
         contributions: true,
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { name: sort }
     })
   ]);
 
@@ -157,7 +159,12 @@ export default async function ParentsPage({ searchParams }: { searchParams: Prom
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right space-x-2">
-                        <Link href={`/parents/${parent.id}`} className="inline-block text-sm text-indigo-600 font-medium hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors">View</Link>
+                        <div className="flex items-center justify-end space-x-2">
+                          <Link href={`/parents/${parent.id}`} className="inline-block text-sm text-indigo-600 font-medium hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors">View</Link>
+                          {isSuperAdmin && (
+                            <DeleteParentButton parentId={parent.id} parentName={parent.name} />
+                          )}
+                        </div>
                       </td>
                     </tr>
                   )
