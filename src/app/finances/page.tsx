@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { calculateFeeDue, getApplicableChildrenCount } from "@/lib/fee-utils";
 import { Receipt } from "lucide-react";
@@ -10,13 +9,6 @@ import clsx from "clsx";
 const PAGE_SIZE = 10;
 
 export default async function FinancesPage({ searchParams }: { searchParams: Promise<{ tab?: string, page?: string }> }) {
-  const { getSession } = await import("@/lib/auth");
-  const session = await getSession();
-  if (session?.user?.role === "TEACHER") {
-    redirect("/");
-  }
-
-
   const resolvedParams = await searchParams;
   
   const [totalParents, allChildren] = await Promise.all([

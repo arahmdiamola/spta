@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { Users, Plus, Search, Printer } from "lucide-react";
 import { calculateFeeDue } from "@/lib/fee-utils";
 import prisma from "@/lib/prisma";
@@ -15,10 +14,6 @@ export default async function ParentsPage({ searchParams }: { searchParams: Prom
   const session = await getSession();
   const isSuperAdmin = session?.user?.role === "SUPER_ADMIN";
   const isTeacher = session?.user?.role === "TEACHER";
-  
-  if (isTeacher) {
-    redirect("/");
-  }
 
 
   const resolvedParams = await searchParams;
