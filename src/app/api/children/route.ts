@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { getSession } from "@/lib/auth";
 
 export async function POST(request: Request) {
+  const session = await getSession();
+  if (session?.user?.role === "TEACHER") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
   try {
     const body = await request.json();
     const { name, grade, parentId } = body;

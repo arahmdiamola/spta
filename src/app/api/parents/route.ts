@@ -5,6 +5,7 @@ import { logAudit } from "@/lib/audit";
 
 export async function POST(request: Request) {
   const session = await getSession();
+  if (session?.user?.role === "TEACHER") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   try {
     const body = await request.json();
@@ -45,6 +46,9 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
+  const session = await getSession();
+  if (session?.user?.role === "TEACHER") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
   try {
     const parents = await prisma.parent.findMany({
       include: {

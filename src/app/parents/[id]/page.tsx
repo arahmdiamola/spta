@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { calculateFeeDue, getApplicableChildrenCount } from "@/lib/fee-utils";
 import Link from "next/link";
@@ -15,6 +16,12 @@ import { getSession } from "@/lib/auth";
 export default async function ParentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
   const isTeacher = session?.user?.role === "TEACHER";
+  
+  if (isTeacher) {
+    redirect("/");
+  }
+
+
   const { id } = await params;
   const parent = await prisma.parent.findUnique({
     where: { id },
