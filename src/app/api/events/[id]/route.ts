@@ -84,3 +84,47 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "Failed to finalize event" }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { getSession } = await import("@/lib/auth");
+  const session = await getSession();
+  
+  if (!session || session.user.role !== "SUPER_ADMIN") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  try {
+    const { id } = await params;
+    
+    // Check if event exists
+    const event = await prisma.event.findUnique({
+      where: { id },
+    });
+
+    if (!event) {
+      return NextResponse.json({ error: "Event not found" }, { status: 404 });
+    }
+
+    // Delete event (Prisma should cascade delete attendances and penalties depending on schema, 
+    // but we can manually delete them first to be safe if cascade isn't set up)
+    await prisma.$transaction([
+      prisma.attendance.deleteMany({ where: { eventId: id } }),
+      prisma.penalty.deleteMany({ where: { eventId: id } }),
+      prisma.event.delete({ where: { id } }),
+    ]);
+
+    // Log the audit action
+    const { logAudit } = await import("@/lib/audit");
+    await logAudit({
+      action: "DELETE",
+      entity: "Event",
+      details: `Deleted event: ${event.name} (${event.date})`,
+      session
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting event:", error);
+    return NextResponse.json({ error: "Failed to delete event" }, { status: 500 });
+  }
+}

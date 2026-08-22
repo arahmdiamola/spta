@@ -5,6 +5,7 @@ import { formatInTimeZone } from "date-fns-tz";
 import FinalizeButton from "./FinalizeButton";
 import { getSession } from "@/lib/auth";
 import RemoveTimeoutButton from "./RemoveTimeoutButton";
+import DeleteEventButton from "./DeleteEventButton";
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +51,11 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           </div>
           <p className="text-slate-500">{formatInTimeZone(new Date(event.date), 'Asia/Manila', "MMMM d, yyyy 'at' h:mm a")}</p>
         </div>
+        {isSuperAdmin && (
+          <div className="flex items-center">
+            <DeleteEventButton eventId={event.id} eventName={event.name} />
+          </div>
+        )}
       </header>
 
       {/* Stats */}
