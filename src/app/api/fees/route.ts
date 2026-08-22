@@ -23,7 +23,7 @@ export async function POST(request: Request) {
 
   try {
     const data = await request.json();
-    const { name, amount, type, year } = data;
+    const { name, amount, type, year, applicableGrades } = data;
 
     if (!name || amount === undefined || !type || !year) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -34,7 +34,8 @@ export async function POST(request: Request) {
         name,
         amount: parseFloat(amount),
         type,
-        year: parseInt(year)
+        year: parseInt(year),
+        applicableGrades: applicableGrades || null
       }
     });
 

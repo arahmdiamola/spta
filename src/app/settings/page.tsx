@@ -12,6 +12,7 @@ export default function SettingsPage() {
   const [newFeeName, setNewFeeName] = useState("");
   const [newFeeAmount, setNewFeeAmount] = useState("");
   const [newFeeType, setNewFeeType] = useState("PER_STUDENT");
+  const [newFeeApplicableGrades, setNewFeeApplicableGrades] = useState("");
   const [isAddingFee, setIsAddingFee] = useState(false);
   const [meetingPenalty, setMeetingPenalty] = useState("100");
   const [assemblyPenalty, setAssemblyPenalty] = useState("100");
@@ -99,7 +100,8 @@ export default function SettingsPage() {
           name: newFeeName,
           amount: newFeeAmount,
           type: newFeeType,
-          year: new Date().getFullYear()
+          year: new Date().getFullYear(),
+          applicableGrades: newFeeApplicableGrades
         })
       });
       if (res.ok) {
@@ -107,6 +109,7 @@ export default function SettingsPage() {
         setFeeCategories([...feeCategories, fee]);
         setNewFeeName("");
         setNewFeeAmount("");
+        setNewFeeApplicableGrades("");
         setIsAddingFee(false);
       }
     } catch (e) {
@@ -181,7 +184,10 @@ export default function SettingsPage() {
                 <div key={fee.id} className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-100">
                   <div>
                     <p className="font-semibold text-slate-900">{fee.name}</p>
-                    <p className="text-xs text-slate-500 uppercase tracking-wider">{fee.type === 'PER_PARENT' ? 'Per Parent' : 'Per Student'} • {fee.year}</p>
+                    <p className="text-xs text-slate-500 uppercase tracking-wider">
+                      {fee.type === 'PER_PARENT' ? 'Per Parent' : 'Per Student'} • {fee.year}
+                      {fee.applicableGrades && ` • Grades: ${fee.applicableGrades}`}
+                    </p>
                   </div>
                   <div className="flex items-center space-x-4">
                     <p className="font-bold text-slate-900">₱{fee.amount}</p>
@@ -224,12 +230,25 @@ export default function SettingsPage() {
                   <select 
                     value={newFeeType}
                     onChange={(e) => setNewFeeType(e.target.value)}
-                    className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-500 text-sm bg-white"
+                    className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-500 text-sm bg-white mb-4"
                   >
                     <option value="PER_STUDENT">Per Student (multiplied by # of children)</option>
                     <option value="PER_PARENT">Per Parent (flat fee per family)</option>
                   </select>
                 </div>
+                {newFeeType === 'PER_STUDENT' && (
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Applicable Grades</label>
+                    <input 
+                      type="text" 
+                      value={newFeeApplicableGrades}
+                      onChange={(e) => setNewFeeApplicableGrades(e.target.value)}
+                      placeholder="e.g. Grade 4, Grade 5, Grade 6 (Leave empty for all grades)"
+                      className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-500 text-sm" 
+                    />
+                    <p className="text-xs text-slate-400 mt-1">Comma-separated list of grades this fee applies to.</p>
+                  </div>
+                )}
                 <div className="flex justify-end space-x-2 pt-2">
                   <button 
                     onClick={() => setIsAddingFee(false)}

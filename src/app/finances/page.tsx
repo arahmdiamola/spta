@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { calculateFeeDue, getApplicableChildrenCount } from "@/lib/fee-utils";
 import { Receipt } from "lucide-react";
 import Link from "next/link";
 import ExportFinancesButton from "@/components/ExportFinancesButton";
@@ -10,9 +11,9 @@ const PAGE_SIZE = 10;
 export default async function FinancesPage({ searchParams }: { searchParams: Promise<{ tab?: string, page?: string }> }) {
   const resolvedParams = await searchParams;
   
-  const [totalParents, totalChildren] = await Promise.all([
+  const [totalParents, allChildren] = await Promise.all([
     prisma.parent.count(),
-    prisma.child.count()
+    prisma.child.findMany({ select: { grade: true } })
   ]);
 
   const feeCategories = await prisma.feeCategory.findMany({
@@ -20,7 +21,7 @@ export default async function FinancesPage({ searchParams }: { searchParams: Pro
   });
 
   const reports = await Promise.all(feeCategories.map(async (fee) => {
-    const expected = fee.type === 'PER_PARENT' ? fee.amount * totalParents : fee.amount * totalChildren;
+    const expected = fee.type === 'PER_PARENT' ? fee.amount * totalParents : fee.amount * getApplicableChildrenCount(fee, allChildren);
     const agg = await prisma.contribution.aggregate({
       where: { feeCategoryId: fee.id },
       _sum: { amountPaid: true }
@@ -55,7 +56,7 @@ export default async function FinancesPage({ searchParams }: { searchParams: Pro
         skip: (currentPage - 1) * PAGE_SIZE,
         take: PAGE_SIZE,
         include: {
-          _count: { select: { children: true } },
+          children: { select: { grade: true } },
           contributions: {
             where: { feeCategoryId: currentTabId }
           }
@@ -67,15 +68,16 @@ export default async function FinancesPage({ searchParams }: { searchParams: Pro
     totalPages = Math.ceil(totalActiveParents / PAGE_SIZE);
 
     activeReportDetails = paginatedParents.map(p => {
+      const childCount = getApplicableChildrenCount(activeReport.fee, p.children);
       const due = activeReport.fee.type === 'PER_PARENT' 
         ? activeReport.fee.amount 
-        : activeReport.fee.amount * p._count.children;
+        : activeReport.fee.amount * childCount;
         
       const paid = p.contributions.reduce((sum, c) => sum + c.amountPaid, 0);
       
       return {
         parent: p,
-        childCount: p._count.children,
+        childCount,
         due,
         paid,
         balance: due - paid

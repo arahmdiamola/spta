@@ -26,7 +26,12 @@ export async function DELETE(
       prisma.parent.delete({ where: { id } })
     ]);
 
-    await logAudit(session.user.id, "DELETE_PARENT", `Deleted parent ID: ${id}`);
+    await logAudit({
+      action: "DELETE",
+      entity: "Parent",
+      details: `Deleted parent ID: ${id}`,
+      session
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

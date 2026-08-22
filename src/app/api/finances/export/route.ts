@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { calculateFeeDue, getApplicableChildrenCount } from "@/lib/fee-utils";
 
 export async function GET() {
   try {
@@ -17,7 +18,7 @@ export async function GET() {
     // prevents shipping megabytes of JSON to the client browser.
     const parents = await prisma.parent.findMany({
       include: {
-        _count: { select: { children: true } },
+        children: { select: { grade: true } },
         contributions: true
       },
       orderBy: { name: 'asc' }
@@ -30,7 +31,8 @@ export async function GET() {
       const feeName = fee.name.replace(/,/g, ''); 
       
       parents.forEach((parent) => {
-        const due = fee.type === 'PER_PARENT' ? fee.amount : fee.amount * parent._count.children;
+        const childCount = getApplicableChildrenCount(fee, parent.children);
+        const due = calculateFeeDue(fee, parent.children);
         const paid = parent.contributions
           .filter(c => c.feeCategoryId === fee.id)
           .reduce((sum, c) => sum + c.amountPaid, 0);
@@ -42,7 +44,7 @@ export async function GET() {
           if (balance <= 0) status = "Settled";
           else if (paid > 0) status = "Partial";
 
-          rows.push(`${feeName},${parentName},${parent._count.children},${due},${paid},${balance},${status}`);
+          rows.push(`${feeName},${parentName},${childCount},${due},${paid},${balance},${status}`);
         }
       });
     });

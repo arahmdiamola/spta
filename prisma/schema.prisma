@@ -69,6 +69,7 @@ model FeeCategory {
   amount        Float
   type          String         // 'PER_PARENT' or 'PER_STUDENT'
   year          Int
+  applicableGrades String?
   contributions Contribution[]
 }
 
@@ -79,6 +80,7 @@ model Contribution {
   feeCategoryId String?
   feeCategory   FeeCategory? @relation(fields: [feeCategoryId], references: [id])
   year          Int
+  applicableGrades String?
   amountPaid    Float
   datePaid      DateTime     @default(now())
 }

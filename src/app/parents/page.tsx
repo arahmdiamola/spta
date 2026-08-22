@@ -1,4 +1,5 @@
 import { Users, Plus, Search, Printer } from "lucide-react";
+import { calculateFeeDue } from "@/lib/fee-utils";
 import prisma from "@/lib/prisma";
 import Link from "next/link";
 import BatchUploadButton from "./BatchUploadButton";
@@ -9,7 +10,7 @@ import DeleteParentButton from "@/components/DeleteParentButton";
 
 const PAGE_SIZE = 10;
 
-export default async function ParentsPage({ searchParams }: { searchParams: Promise<{ q?: string; page?: string }> }) {
+export default async function ParentsPage({ searchParams }: { searchParams: Promise<{ q?: string; page?: string; sort?: string }> }) {
   const session = await getSession();
   const isSuperAdmin = session?.user?.role === "SUPER_ADMIN";
   const resolvedParams = await searchParams;
@@ -35,21 +36,7 @@ export default async function ParentsPage({ searchParams }: { searchParams: Prom
     })
   ]);
 
-  const settings = await prisma.settings.findMany();
-  let parentFee = 0;
-  let studentFeeSum = 0;
-
-  settings.forEach(s => {
-    if (s.key === "PER_PARENT_MEMBERSHIP_FEE") {
-      parentFee = parseFloat(s.value) || 0;
-    }
-    if (s.key === "PER_STUDENT_CONTRIBUTIONS") {
-      try {
-        const fees = JSON.parse(s.value);
-        studentFeeSum = fees.reduce((sum: number, f: any) => sum + (parseFloat(f.amount) || 0), 0);
-      } catch (e) {}
-    }
-  });
+  const feeCategories = await prisma.feeCategory.findMany();
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500">
@@ -105,7 +92,7 @@ export default async function ParentsPage({ searchParams }: { searchParams: Prom
               ) : (
                 parents.map((parent) => {
                   const unpaidPenalties = parent.penalties.filter(p => !p.isPaid).reduce((sum, p) => sum + p.amount, 0);
-                  const totalDue = parentFee + (studentFeeSum * parent.children.length);
+                  const totalDue = feeCategories.reduce((sum, fee) => sum + calculateFeeDue(fee, parent.children), 0);
                   const totalPaid = parent.contributions.reduce((sum, c) => sum + c.amountPaid, 0);
                   const unpaidContributions = Math.max(0, totalDue - totalPaid);
                   

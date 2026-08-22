@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { calculateFeeDue, getApplicableChildrenCount } from "@/lib/fee-utils";
 import Link from "next/link";
 import { ArrowLeft, AlertTriangle, CreditCard, Receipt } from "lucide-react";
 import { formatInTimeZone } from "date-fns-tz";
@@ -63,7 +64,7 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
   let totalPaidAll = 0;
 
   const feeSummaries = feeCategories.map(fee => {
-    const due = fee.type === 'PER_PARENT' ? fee.amount : fee.amount * parent.children.length;
+    const due = calculateFeeDue(fee, parent.children);
     const paid = parent.contributions
       .filter(c => c.feeCategoryId === fee.id)
       .reduce((sum, c) => sum + c.amountPaid, 0);
@@ -210,7 +211,7 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
                       <div>
                         <h4 className="font-bold text-slate-900">{fee.name} <span className="text-xs font-normal text-slate-500 ml-2 border border-slate-200 px-2 py-0.5 rounded-full bg-white">{fee.year}</span></h4>
                         <p className="text-sm text-slate-500 mt-1">
-                          {fee.type === 'PER_PARENT' ? 'Per Parent' : `Per Student (₱${fee.amount} × ${parent.children.length})`}
+                          {fee.type === 'PER_PARENT' ? 'Per Parent' : `Per Student (₱${fee.amount} x ${getApplicableChildrenCount(fee, parent.children)})`}
                         </p>
                       </div>
                       <div className="text-right flex items-center justify-between sm:block">
