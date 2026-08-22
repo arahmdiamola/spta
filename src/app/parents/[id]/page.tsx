@@ -5,6 +5,7 @@ import { ArrowLeft, AlertTriangle, CreditCard, Receipt } from "lucide-react";
 import { formatInTimeZone } from "date-fns-tz";
 import AddChildButton from "./AddChildButton";
 import AddContributionButton from "./AddContributionButton";
+import EditParentDetailsButton from "./EditParentDetailsButton";
 import ParentPhotoUpload from "@/components/ParentPhotoUpload";
 import IdCardPreview from "@/components/IdCardPreview";
 import SimpleQrPreview from "@/components/SimpleQrPreview";
@@ -102,8 +103,11 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
         <div className="space-y-8">
           <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col items-center text-center space-y-4">
             <ParentPhotoUpload parentId={parent.id} initialPhoto={parent.photo} />
-            <div>
-              <h2 className="text-xl font-bold text-slate-900">{parent.name}</h2>
+            <div className="flex flex-col items-center">
+              <div className="flex items-center space-x-2">
+                <h2 className="text-xl font-bold text-slate-900">{parent.name}</h2>
+                <EditParentDetailsButton parentId={parent.id} initialName={parent.name} initialContact={parent.contactInfo || ""} />
+              </div>
               <p className="text-slate-500">{parent.contactInfo || "No contact info"}</p>
             </div>
           </div>

@@ -39,3 +39,40 @@ export async function DELETE(
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
+
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getSession();
+    if (!session || session.user.role === 'TEACHER') {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    const { id } = await params;
+    const body = await req.json();
+    const { name, contactInfo } = body;
+
+    if (!name) {
+      return NextResponse.json({ error: "Name is required" }, { status: 400 });
+    }
+
+    const updatedParent = await prisma.parent.update({
+      where: { id },
+      data: { name, contactInfo }
+    });
+
+    await logAudit({
+      action: "UPDATE",
+      entity: "Parent",
+      details: \Updated parent ID: \, Name: \\,
+      session
+    });
+
+    return NextResponse.json(updatedParent);
+  } catch (error) {
+    console.error("Failed to update parent:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
