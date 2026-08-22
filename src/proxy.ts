@@ -29,10 +29,10 @@ export async function proxy(request: NextRequest) {
         return NextResponse.redirect(new URL("/", request.url));
       }
 
-      // Block TEACHER from accessing /parents and /settings
+      // Block TEACHER from accessing /settings
       if (
         user.role === 'TEACHER' && 
-        (request.nextUrl.pathname.startsWith('/parents') || request.nextUrl.pathname.startsWith('/settings'))
+        request.nextUrl.pathname.startsWith('/settings')
       ) {
         return NextResponse.redirect(new URL("/", request.url));
       }
