@@ -132,6 +132,9 @@ export default function ScannerPage() {
                     console.error(error);
                     setCameraError(error.message || "Failed to access camera. Please check permissions or ensure you are using HTTPS / localhost.");
                   }}
+                  constraints={{
+                    facingMode: "environment",
+                  }}
                   formats={["qr_code"]}
                 />
               </div>
