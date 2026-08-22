@@ -1,41 +1,42 @@
 "use client";
 
 import { Search } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect, useTransition } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useState, useEffect, useTransition, useRef } from "react";
 
 export default function ParentSearch() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const [query, setQuery] = useState(searchParams.get("q") || "");
   const [isPending, startTransition] = useTransition();
 
   const [sort, setSort] = useState(searchParams.get("sort") || "asc");
 
+  // Use a ref so the effect can read the latest searchParams without depending on it
+  const searchParamsRef = useRef(searchParams);
+  searchParamsRef.current = searchParams;
+
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
-      const params = new URLSearchParams(searchParams.toString());
+      const params = new URLSearchParams();
       if (query) {
         params.set("q", query);
-      } else {
-        params.delete("q");
       }
       
       if (sort && sort !== "asc") {
         params.set("sort", sort);
-      } else {
-        params.delete("sort");
       }
       
       params.set("page", "1"); // Reset to page 1 on new search or sort
       
       startTransition(() => {
-        router.push(`?${params.toString()}`);
+        router.push(`${pathname}?${params.toString()}`);
       });
     }, 300);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [query, sort, router, searchParams]);
+  }, [query, sort, router, pathname]);
 
   return (
     <div className="flex flex-col sm:flex-row gap-3 w-full max-w-2xl">
