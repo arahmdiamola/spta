@@ -18,7 +18,7 @@ export default function EditParentDetailsButton({ parentId, initialName, initial
     setLoading(true);
 
     try {
-      const res = await fetch(\/api/parents/\\, {
+      const res = await fetch(`/api/parents/${parentId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, contactInfo }),

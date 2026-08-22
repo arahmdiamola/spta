@@ -66,7 +66,7 @@ export async function PUT(
     await logAudit({
       action: "UPDATE",
       entity: "Parent",
-      details: \Updated parent ID: \, Name: \\,
+      details: `Updated parent ID: ${id}, Name: ${name}`,
       session
     });
 
