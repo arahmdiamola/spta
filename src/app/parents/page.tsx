@@ -13,6 +13,7 @@ const PAGE_SIZE = 10;
 export default async function ParentsPage({ searchParams }: { searchParams: Promise<{ q?: string; page?: string; sort?: string }> }) {
   const session = await getSession();
   const isSuperAdmin = session?.user?.role === "SUPER_ADMIN";
+  const isTeacher = session?.user?.role === "TEACHER";
   const resolvedParams = await searchParams;
   const q = resolvedParams?.q || "";
   const currentPage = parseInt(resolvedParams?.page || "1", 10);
@@ -47,16 +48,20 @@ export default async function ParentsPage({ searchParams }: { searchParams: Prom
         </div>
         <div className="flex items-center space-x-3">
           {isSuperAdmin && (
-            <Link href="/parents/ids" className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-xl font-medium transition-colors flex items-center space-x-2 shadow-sm">
-              <Printer size={20} />
+            <Link href="/parents/ids" className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-4 py-3 rounded-xl font-medium transition-colors flex items-center space-x-2 shadow-sm">
+              <Printer size={20} className="text-slate-500" />
               <span>Export All IDs</span>
             </Link>
           )}
-          <BatchUploadButton />
-          <Link href="/parents/new" className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-xl font-medium transition-colors flex items-center space-x-2 shadow-sm">
-            <Plus size={20} />
-            <span>Add Parent</span>
-          </Link>
+          {!isTeacher && (
+            <>
+              <BatchUploadButton />
+              <Link href="/parents/new" className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-xl font-medium transition-colors flex items-center space-x-2 shadow-sm">
+                <Plus size={20} />
+                <span>Add Parent</span>
+              </Link>
+            </>
+          )}
         </div>
       </header>
 

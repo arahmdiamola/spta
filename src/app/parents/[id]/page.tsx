@@ -14,6 +14,7 @@ import { getSession } from "@/lib/auth";
 
 export default async function ParentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
+  const isTeacher = session?.user?.role === "TEACHER";
   const { id } = await params;
   const parent = await prisma.parent.findUnique({
     where: { id },
@@ -102,11 +103,11 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
         {/* Left Column: Info & QR */}
         <div className="space-y-8">
           <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col items-center text-center space-y-4">
-            <ParentPhotoUpload parentId={parent.id} initialPhoto={parent.photo} />
+            <ParentPhotoUpload parentId={parent.id} initialPhoto={parent.photo} readonly={isTeacher} />
             <div className="flex flex-col items-center">
               <div className="flex items-center space-x-2">
                 <h2 className="text-xl font-bold text-slate-900">{parent.name}</h2>
-                <EditParentDetailsButton parentId={parent.id} initialName={parent.name} initialContact={parent.contactInfo || ""} />
+                {!isTeacher && <EditParentDetailsButton parentId={parent.id} initialName={parent.name} initialContact={parent.contactInfo || ""} />}
               </div>
               <p className="text-slate-500">{parent.contactInfo || "No contact info"}</p>
             </div>
@@ -122,7 +123,7 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
           <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-slate-900">Children</h3>
-              <AddChildButton parentId={parent.id} />
+              {!isTeacher && <AddChildButton parentId={parent.id} />}
             </div>
             
             <div className="space-y-3">
@@ -174,7 +175,7 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
                       {penalty.isPaid ? (
                         <span className="text-emerald-600 font-medium text-xs px-2 py-1 bg-emerald-50 rounded-lg">Settled</span>
                       ) : (
-                        <SettlePenaltyButton penaltyId={penalty.id} />
+                        !isTeacher && <SettlePenaltyButton penaltyId={penalty.id} />
                       )}
                     </div>
                   </div>
@@ -225,8 +226,8 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
                         </div>
                         {fee.balance > 0 ? (
                           <div className="flex space-x-2 mt-2">
-                            <AddContributionButton parentId={parent.id} feeCategoryId={fee.id} label="Partial" compact={true} />
-                            <AddContributionButton parentId={parent.id} feeCategoryId={fee.id} suggestedAmount={fee.balance} label="Settle" compact={true} />
+                            {!isTeacher && <AddContributionButton parentId={parent.id} feeCategoryId={fee.id} label="Partial" compact={true} />}
+                            {!isTeacher && <AddContributionButton parentId={parent.id} feeCategoryId={fee.id} suggestedAmount={fee.balance} label="Settle" compact={true} />}
                           </div>
                         ) : (
                           <div className="mt-2 text-xs font-medium text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full inline-block">
@@ -278,7 +279,7 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
             )}
 
             {/* Uncategorized Add Payment fallback */}
-            {feeSummaries.length === 0 && (
+            {feeSummaries.length === 0 && !isTeacher && (
               <div className="mt-4">
                 <AddContributionButton parentId={parent.id} />
               </div>
