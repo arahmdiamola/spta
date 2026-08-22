@@ -25,7 +25,7 @@ export async function proxy(request: NextRequest) {
       const { payload } = await jwtVerify(sessionCookie, key, { algorithms: ["HS256"] });
       const user = payload.user as any;
       
-      if (request.nextUrl.pathname === '/parents/ids' && user.role !== 'SUPER_ADMIN') {
+      if ((request.nextUrl.pathname === '/parents/ids' || request.nextUrl.pathname === '/parents/qrs') && user.role !== 'SUPER_ADMIN') {
         return NextResponse.redirect(new URL("/", request.url));
       }
 

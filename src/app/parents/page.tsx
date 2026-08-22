@@ -50,10 +50,18 @@ export default async function ParentsPage({ searchParams }: { searchParams: Prom
         </div>
         <div className="flex items-center space-x-3">
           {isSuperAdmin && (
-            <Link href="/parents/ids" className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-4 py-3 rounded-xl font-medium transition-colors flex items-center space-x-2 shadow-sm">
-              <Printer size={20} className="text-slate-500" />
-              <span>Export All IDs</span>
-            </Link>
+            <div className="flex items-center space-x-2">
+              <Link href="/parents/ids" className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-4 py-3 rounded-xl font-medium transition-colors flex items-center space-x-2 shadow-sm">
+                <Printer size={20} className="text-slate-500" />
+                <span className="hidden sm:inline">Export IDs</span>
+                <span className="sm:hidden">IDs</span>
+              </Link>
+              <Link href="/parents/qrs" className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-4 py-3 rounded-xl font-medium transition-colors flex items-center space-x-2 shadow-sm">
+                <Printer size={20} className="text-slate-500" />
+                <span className="hidden sm:inline">Export QRs</span>
+                <span className="sm:hidden">QRs</span>
+              </Link>
+            </div>
           )}
           {!isTeacher && (
             <>
