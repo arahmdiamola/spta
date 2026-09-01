@@ -71,3 +71,10 @@ export async function POST(
     return NextResponse.json({ error: "Failed to update photo" }, { status: 500 });
   }
 }
+
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  return POST(request, { params });
+}
