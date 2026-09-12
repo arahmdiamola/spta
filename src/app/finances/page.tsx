@@ -8,7 +8,7 @@ import clsx from "clsx";
 
 const PAGE_SIZE = 10;
 
-export default async function FinancesPage({ searchParams }: { searchParams: Promise<{ tab?: string, page?: string }> }) {
+export default async function FinancesPage({ searchParams }: { searchParams: Promise<{ tab?: string, page?: string, filter?: string }> }) {
   const resolvedParams = await searchParams;
   
   const [totalParents, allChildren] = await Promise.all([
@@ -46,28 +46,23 @@ export default async function FinancesPage({ searchParams }: { searchParams: Pro
   const activeReport = reports.find(r => r.fee.id === currentTabId);
   const currentPage = parseInt(resolvedParams?.page || "1", 10);
 
+  const currentFilter = resolvedParams?.filter || "all";
+
   let activeReportDetails: any[] = [];
   let totalPages = 0;
 
   if (activeReport) {
-    const [totalActiveParents, paginatedParents] = await prisma.$transaction([
-      prisma.parent.count(),
-      prisma.parent.findMany({
-        skip: (currentPage - 1) * PAGE_SIZE,
-        take: PAGE_SIZE,
-        include: {
-          children: { select: { grade: true } },
-          contributions: {
-            where: { feeCategoryId: currentTabId }
-          }
-        },
-        orderBy: { name: 'asc' }
-      })
-    ]);
+    const allParents = await prisma.parent.findMany({
+      include: {
+        children: { select: { grade: true } },
+        contributions: {
+          where: { feeCategoryId: currentTabId }
+        }
+      },
+      orderBy: { name: 'asc' }
+    });
 
-    totalPages = Math.ceil(totalActiveParents / PAGE_SIZE);
-
-    activeReportDetails = paginatedParents.map(p => {
+    let filteredDetails = allParents.map(p => {
       const childCount = getApplicableChildrenCount(activeReport.fee, p.children);
       const due = activeReport.fee.type === 'PER_PARENT' 
         ? activeReport.fee.amount 
@@ -83,6 +78,19 @@ export default async function FinancesPage({ searchParams }: { searchParams: Pro
         balance: due - paid
       };
     });
+
+    if (currentFilter === "paid") {
+      filteredDetails = filteredDetails.filter(d => d.balance <= 0);
+    } else if (currentFilter === "unpaid") {
+      filteredDetails = filteredDetails.filter(d => d.paid === 0 && d.balance > 0);
+    } else if (currentFilter === "partial") {
+      filteredDetails = filteredDetails.filter(d => d.paid > 0 && d.balance > 0);
+    }
+
+    const totalActiveParents = filteredDetails.length;
+    totalPages = Math.ceil(totalActiveParents / PAGE_SIZE);
+
+    activeReportDetails = filteredDetails.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   }
 
   return (
@@ -160,6 +168,14 @@ export default async function FinancesPage({ searchParams }: { searchParams: Pro
                   <p className="font-bold text-slate-900">₱{activeReport.expected}</p>
                 </div>
               </div>
+            </div>
+            
+            <div className="p-4 border-b border-slate-100 bg-white flex flex-wrap items-center gap-2">
+              <span className="text-sm font-medium text-slate-500 mr-2">Filter:</span>
+              <Link href={`?tab=${currentTabId}&filter=all`} className={clsx("px-4 py-1.5 text-sm rounded-full transition-colors", currentFilter === "all" ? "bg-indigo-100 text-indigo-700 font-medium" : "bg-slate-100 text-slate-600 hover:bg-slate-200")}>All</Link>
+              <Link href={`?tab=${currentTabId}&filter=paid`} className={clsx("px-4 py-1.5 text-sm rounded-full transition-colors", currentFilter === "paid" ? "bg-emerald-100 text-emerald-700 font-medium" : "bg-slate-100 text-slate-600 hover:bg-slate-200")}>Settled</Link>
+              <Link href={`?tab=${currentTabId}&filter=partial`} className={clsx("px-4 py-1.5 text-sm rounded-full transition-colors", currentFilter === "partial" ? "bg-amber-100 text-amber-700 font-medium" : "bg-slate-100 text-slate-600 hover:bg-slate-200")}>Partial</Link>
+              <Link href={`?tab=${currentTabId}&filter=unpaid`} className={clsx("px-4 py-1.5 text-sm rounded-full transition-colors", currentFilter === "unpaid" ? "bg-rose-100 text-rose-700 font-medium" : "bg-slate-100 text-slate-600 hover:bg-slate-200")}>Unpaid</Link>
             </div>
             
             <div className="overflow-x-auto">
