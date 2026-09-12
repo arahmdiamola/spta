@@ -15,15 +15,6 @@ export async function POST(
   try {
     const { id } = await params;
 
-    await prisma.penalty.update({
-      where: { id },
-      data: {
-        isPaid: true,
-        settledAt: new Date(),
-        settledBy: session?.user?.username || "SYSTEM",
-      },
-    });
-
     const penalty = await prisma.penalty.findUnique({
       where: { id },
       include: {
@@ -36,16 +27,25 @@ export async function POST(
       return NextResponse.json({ error: "Penalty not found" }, { status: 404 });
     }
 
+    const updatedPenalty = await prisma.penalty.update({
+      where: { id },
+      data: {
+        isPaid: false,
+        settledAt: null,
+        settledBy: null,
+      },
+    });
+
     await logAudit({
-      action: "UPDATE",
+      action: "UNDO",
       entity: "Penalty",
-      details: `Settled penalty ₱${penalty.amount} for Parent: ${penalty.parent.name}`,
+      details: `Unsettled penalty ₱${penalty.amount} for Parent: ${penalty.parent.name} (Event: ${penalty.event.name})`,
       session,
     });
 
-    return NextResponse.json(penalty);
+    return NextResponse.json(updatedPenalty);
   } catch (error) {
-    console.error("Failed to settle penalty:", error);
-    return NextResponse.json({ error: "Failed to settle penalty" }, { status: 500 });
+    console.error("Failed to unsettle penalty:", error);
+    return NextResponse.json({ error: "Failed to unsettle penalty" }, { status: 500 });
   }
 }

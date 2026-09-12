@@ -64,35 +64,39 @@ model Settings {
 }
 
 model FeeCategory {
-  id            String         @id @default(uuid())
-  name          String
-  amount        Float
-  type          String         // 'PER_PARENT' or 'PER_STUDENT'
-  year          Int
+  id               String         @id @default(uuid())
+  name             String
+  amount           Float
+  type             String         // 'PER_PARENT' or 'PER_STUDENT'
+  year             Int
   applicableGrades String?
-  contributions Contribution[]
+  contributions    Contribution[]
 }
 
 model Contribution {
-  id            String       @id @default(uuid())
-  parentId      String
-  parent        Parent       @relation(fields: [parentId], references: [id])
-  feeCategoryId String?
-  feeCategory   FeeCategory? @relation(fields: [feeCategoryId], references: [id])
-  year          Int
+  id               String       @id @default(uuid())
+  receiptNumber    Int          @unique @default(autoincrement())
+  parentId         String
+  parent           Parent       @relation(fields: [parentId], references: [id])
+  feeCategoryId    String?
+  feeCategory      FeeCategory? @relation(fields: [feeCategoryId], references: [id])
+  year             Int
   applicableGrades String?
-  amountPaid    Float
-  datePaid      DateTime     @default(now())
+  amountPaid       Float
+  datePaid         DateTime     @default(now())
+  recordedBy       String?
 }
 
 model Penalty {
-  id       String  @id @default(uuid())
-  parentId String
-  eventId  String
-  parent   Parent  @relation(fields: [parentId], references: [id])
-  event    Event   @relation(fields: [eventId], references: [id])
-  amount   Float
-  isPaid   Boolean @default(false)
+  id        String    @id @default(uuid())
+  parentId  String
+  eventId   String
+  parent    Parent    @relation(fields: [parentId], references: [id])
+  event     Event     @relation(fields: [eventId], references: [id])
+  amount    Float
+  isPaid    Boolean   @default(false)
+  settledAt DateTime?
+  settledBy String?
 }
 
 model Expense {

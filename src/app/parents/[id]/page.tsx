@@ -10,6 +10,9 @@ import ParentPhotoUpload from "@/components/ParentPhotoUpload";
 import IdCardPreview from "@/components/IdCardPreview";
 import SimpleQrPreview from "@/components/SimpleQrPreview";
 import SettlePenaltyButton from "./SettlePenaltyButton";
+import UndoContributionButton from "./UndoContributionButton";
+import UndoPenaltyButton from "./UndoPenaltyButton";
+import ReprintReceiptButton from "./ReprintReceiptButton";
 import { getSession } from "@/lib/auth";
 
 export default async function ParentDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -172,11 +175,14 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
                       <span className={`font-semibold ${penalty.isPaid ? 'text-slate-700' : 'text-rose-800'}`}>{penalty.event.name}</span>
                       <p className="text-xs text-slate-500 mt-0.5">Absent - ₱{penalty.amount} • {formatInTimeZone(new Date(penalty.event.date), 'Asia/Manila', "MMM d, yyyy")}</p>
                     </div>
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-2">
                       {penalty.isPaid ? (
-                        <span className="text-emerald-600 font-medium text-xs px-2 py-1 bg-emerald-50 rounded-lg">Settled</span>
+                        <>
+                          <span className="text-emerald-600 font-medium text-xs px-2 py-1 bg-emerald-50 rounded-lg">Settled</span>
+                          {!isTeacher && <UndoPenaltyButton penaltyId={penalty.id} amount={penalty.amount} eventName={penalty.event.name} />}
+                        </>
                       ) : (
-                        !isTeacher && <SettlePenaltyButton penaltyId={penalty.id} />
+                        !isTeacher && <SettlePenaltyButton penaltyId={penalty.id} parentName={parent.name} eventName={penalty.event.name} amount={penalty.amount} schoolName={idCardSettings.schoolName} schoolAddress={idCardSettings.schoolAddress} />
                       )}
                     </div>
                   </div>
@@ -227,8 +233,8 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
                         </div>
                         {fee.balance > 0 ? (
                           <div className="flex space-x-2 mt-2">
-                            {!isTeacher && <AddContributionButton parentId={parent.id} feeCategoryId={fee.id} label="Partial" compact={true} />}
-                            {!isTeacher && <AddContributionButton parentId={parent.id} feeCategoryId={fee.id} suggestedAmount={fee.balance} label="Settle" compact={true} />}
+                            {!isTeacher && <AddContributionButton parentId={parent.id} parentName={parent.name} feeCategoryId={fee.id} feeCategoryName={fee.name} label="Partial" compact={true} schoolName={idCardSettings.schoolName} schoolAddress={idCardSettings.schoolAddress} />}
+                            {!isTeacher && <AddContributionButton parentId={parent.id} parentName={parent.name} feeCategoryId={fee.id} feeCategoryName={fee.name} suggestedAmount={fee.balance} label="Settle" compact={true} schoolName={idCardSettings.schoolName} schoolAddress={idCardSettings.schoolAddress} />}
                           </div>
                         ) : (
                           <div className="mt-2 text-xs font-medium text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full inline-block">
@@ -246,8 +252,19 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
                             .filter(c => c.feeCategoryId === fee.id)
                             .map(c => (
                               <div key={c.id} className="flex justify-between items-center text-sm">
-                                <span className="text-slate-500">{formatInTimeZone(new Date(c.datePaid), 'Asia/Manila', "MMM d, yyyy h:mm a")}</span>
-                                <span className="font-medium text-slate-700">₱{c.amountPaid}</span>
+                                <div className="flex items-center space-x-1">
+                                  <span className="text-slate-500">{formatInTimeZone(new Date(c.datePaid), 'Asia/Manila', "MMM d, yyyy h:mm a")}</span>
+                                  {c.receiptNumber > 0 && <span className="text-xs text-slate-400">(#{String(c.receiptNumber).padStart(7, '0')})</span>}
+                                </div>
+                                <div className="flex items-center space-x-1">
+                                  <span className="font-medium text-slate-700">₱{c.amountPaid}</span>
+                                  {!isTeacher && (
+                                    <>
+                                      <ReprintReceiptButton receiptNumber={c.receiptNumber} parentName={parent.name} categoryName={fee.name} amount={c.amountPaid} date={c.datePaid.toISOString()} recordedBy={c.recordedBy || "SYSTEM"} type="contribution" schoolName={idCardSettings.schoolName} schoolAddress={idCardSettings.schoolAddress} />
+                                      <UndoContributionButton contributionId={c.id} amount={c.amountPaid} receiptNumber={c.receiptNumber} />
+                                    </>
+                                  )}
+                                </div>
                               </div>
                             ))}
                         </div>
@@ -270,8 +287,19 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
                       .filter(c => !c.feeCategoryId)
                       .map(c => (
                         <div key={c.id} className="flex justify-between items-center text-sm">
-                          <span className="text-slate-500">{formatInTimeZone(new Date(c.datePaid), 'Asia/Manila', "MMM d, yyyy h:mm a")}</span>
-                          <span className="font-medium text-slate-700">₱{c.amountPaid}</span>
+                          <div className="flex items-center space-x-1">
+                            <span className="text-slate-500">{formatInTimeZone(new Date(c.datePaid), 'Asia/Manila', "MMM d, yyyy h:mm a")}</span>
+                            {c.receiptNumber > 0 && <span className="text-xs text-slate-400">(#{String(c.receiptNumber).padStart(7, '0')})</span>}
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <span className="font-medium text-slate-700">₱{c.amountPaid}</span>
+                            {!isTeacher && (
+                              <>
+                                <ReprintReceiptButton receiptNumber={c.receiptNumber} parentName={parent.name} categoryName={null} amount={c.amountPaid} date={c.datePaid.toISOString()} recordedBy={c.recordedBy || "SYSTEM"} type="contribution" schoolName={idCardSettings.schoolName} schoolAddress={idCardSettings.schoolAddress} />
+                                <UndoContributionButton contributionId={c.id} amount={c.amountPaid} receiptNumber={c.receiptNumber} />
+                              </>
+                            )}
+                          </div>
                         </div>
                       ))}
                   </div>
@@ -282,7 +310,7 @@ export default async function ParentDetailPage({ params }: { params: Promise<{ i
             {/* Uncategorized Add Payment fallback */}
             {feeSummaries.length === 0 && !isTeacher && (
               <div className="mt-4">
-                <AddContributionButton parentId={parent.id} />
+                <AddContributionButton parentId={parent.id} parentName={parent.name} schoolName={idCardSettings.schoolName} schoolAddress={idCardSettings.schoolAddress} />
               </div>
             )}
 

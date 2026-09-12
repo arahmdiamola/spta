@@ -3,24 +3,34 @@
 import { useState } from "react";
 import { PlusCircle, X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import ReceiptModal, { ReceiptData } from "@/components/ReceiptModal";
 
 export default function AddContributionButton({ 
   parentId, 
+  parentName,
   feeCategoryId, 
+  feeCategoryName,
   suggestedAmount,
   label = "Record Payment",
-  compact = false
+  compact = false,
+  schoolName = "",
+  schoolAddress = ""
 }: { 
   parentId: string, 
+  parentName: string,
   feeCategoryId?: string, 
+  feeCategoryName?: string,
   suggestedAmount?: number,
   label?: string,
-  compact?: boolean
+  compact?: boolean,
+  schoolName?: string,
+  schoolAddress?: string
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [amount, setAmount] = useState(suggestedAmount ? String(suggestedAmount) : "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,6 +52,19 @@ export default function AddContributionButton({
         const data = await res.json();
         throw new Error(data.error || "Failed to record payment");
       }
+
+      const contribution = await res.json();
+      
+      // Show receipt
+      setReceiptData({
+        receiptNumber: contribution.receiptNumber,
+        parentName: contribution.parent?.name || parentName,
+        categoryName: contribution.feeCategory?.name || feeCategoryName || null,
+        amount: contribution.amountPaid,
+        date: contribution.datePaid,
+        recordedBy: contribution.recordedBy || "SYSTEM",
+        type: "contribution",
+      });
 
       setIsOpen(false);
       setAmount("");
@@ -123,6 +146,16 @@ export default function AddContributionButton({
             </form>
           </div>
         </div>
+      )}
+
+      {receiptData && (
+        <ReceiptModal
+          receipt={receiptData}
+          schoolName={schoolName}
+          schoolAddress={schoolAddress}
+          isOpen={true}
+          onClose={() => setReceiptData(null)}
+        />
       )}
     </>
   );

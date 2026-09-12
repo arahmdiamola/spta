@@ -9,3 +9,20 @@
   background-color: #f8fafc; /* slate-50 */
   color: #0f172a; /* slate-900 */
 }
+
+/* Thermal receipt printer styles */
+@media print {
+  @page {
+    size: 80mm auto;
+    margin: 0;
+  }
+
+  body {
+    background: white !important;
+  }
+
+  /* Hide everything except the receipt print content */
+  body > *:not(.receipt-print-container) {
+    display: none !important;
+  }
+}

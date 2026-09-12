@@ -6,7 +6,7 @@ export async function logAudit({
   details,
   session
 }: {
-  action: "CREATE" | "UPDATE" | "DELETE" | "RESET" | "ARCHIVE";
+  action: "CREATE" | "UPDATE" | "DELETE" | "RESET" | "ARCHIVE" | "UNDO";
   entity: string;
   details?: string;
   session: any;
